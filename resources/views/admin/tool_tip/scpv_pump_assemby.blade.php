@@ -1,0 +1,36 @@
+@extends('layouts.admin')
+@section('content')
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 text-dark">{{ trans('Add tooltips for SCPV pump.') }}</h1>
+            </div>
+            <div class="col-sm-6">
+                
+            </div>
+        </div>
+    </div>
+</div>
+    
+<!-- Main content -->
+<section class="content">
+    @include('layouts.message')
+
+    <div class="card-body">
+        <form action="{{ route('admin.scpv_t_tip') }}" method="POST">
+            @csrf             
+            @foreach($current_data as $cd)
+            <div class="form-group {{ $errors->has('name') ? 'has-error' : '' }}">
+                <label for="name">{{ucfirst(str_replace("_"," ",$cd->component_name))}}</label>
+                <input type="text" id="{{$cd->component_name}}" name="{{$cd->component_name}}" class="form-control" value="{{$cd->tool_tip}}">
+            </div>
+            @endforeach  
+            <div>
+                <input class="btn btn-danger" type="submit" value="{{ trans('global.save') }}">
+            </div>
+        </form>
+    </div>
+</section>
+@endsection

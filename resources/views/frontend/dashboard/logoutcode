@@ -1,0 +1,8 @@
+
+<a href="#" class="nav-link" onclick="event.preventDefault(); document.getElementById('logoutform').submit();">
+    <i class="cil-account-logout c-sidebar-nav-icon nav-icon"></i>
+    {{ trans('global.logout') }}
+</a>
+<form id="logoutform" action="{{ route('logout') }}" method="POST" style="display: none;">
+    {{ csrf_field() }}
+</form>

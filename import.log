@@ -1,0 +1,3 @@
+nohup: ignoring input
+[2026-02-18 12:20:05][7] Processing: App\Jobs\ControlPanelFileImportProcess
+[2026-02-18 12:20:05][7] Failed:     App\Jobs\ControlPanelFileImportProcess

@@ -1,0 +1,9 @@
+public\fassets\css\main.css
+1294, 1305, 1309, 1310
+
+resources\views\frontend\layout\app.blade.php
+@yield('style')
+
+INSERT INTO `setup_fields` (`id`, `name`, `label`, `value`) VALUES (NULL, 'fire_fighting_over_head', 'Fire Fighting Over Head', '1.1');
+
+C:\xampp\htdocs\wilo2\app\Helpers\FireFighterHelper.php
