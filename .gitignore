@@ -19,4 +19,16 @@ composer.json
 /composer.lock
 
 database/*.sql
+
+/storage/framework/*
+!/storage/framework/.gitignore
+
+/storage/logs/*
+!/storage/logs/.gitignore
+
 *.sql
+*.zip
+*.rar
+*.7z
+
+/public/uploads/*
