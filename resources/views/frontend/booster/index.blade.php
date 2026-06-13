@@ -994,83 +994,203 @@
             });
         }
 
-        $("#no_of_pump").on('change', function (e) {
-            var no_of_pump = $('#no_of_pump option:selected').val();
+        // $("#no_of_pump").on('change', function (e) {
+        //     var no_of_pump = $('#no_of_pump option:selected').val();
+        //     $('#no_of_pumps_pi').val(no_of_pump);
+        //     $("#power_rating").removeAttr('disabled');
+        //     $('#controlpanel_form select[id="power_rating"] option:gt(0)').remove().end();
+        //     $('#controlpanel_form select[id="voltage"] option:gt(0)').remove().end();
+        //     $('#controlpanel_form select[id="application"] option:gt(0)').remove().end();
+        //     $('#controlpanel_form select[id="ambient_temp"] option:gt(0)').remove().end();
+        //     $('#controlpanel_form select[id="stater_type"] option:gt(0)').remove().end();
+        //     $('#controlpanel_form select[id="communication_protocol"] option:gt(0)').remove().end();
+        //     $('#controlpanel_form select[id="ip_rating"] option:gt(0)').remove().end();
+        //     $('#controlpanel_form select[id="component"] option:gt(0)').remove().end();
+        //     $('#controlpanel_form select[id="enclosure"] option:gt(0)').remove().end();
+        //     $('#cp_height').val("");
+        //     $('#cp_width').val("");
+        //     $('#cp_price').val("");
+        //     $('#cp_range').val("");
+        //     $('#cp_starter_type').val("");
+        //     $("#voltage").attr('disabled', 'disabled');
+        //     $("#application").attr('disabled', 'disabled');
+        //     $("#ambient_temp").attr('disabled', 'disabled');
+        //     $("#stater_type").attr('disabled', 'disabled');
+        //     $("#communication_protocol").attr('disabled', 'disabled');
+        //     $("#enclosure").attr('disabled', 'disabled');
+        //     $("#ip_rating").attr('disabled', 'disabled');
+        //     $("#component").attr('disabled', 'disabled');
+
+
+
+        //     $.ajax({
+        //         type: "get",
+        //         url: "{{url('controlpanel/ajaxFilter')}}",
+        //         data: $('#controlpanel_form').serialize(),
+        //         success: function (response) {
+
+        //             var powers = response.data.powers;
+        //             if ($('#pumpType').val() == 'full_pump' || $('#pumpType').val() == 'bareshaft_pump') {
+
+        //                 for (var i = 0; i < powers.length; i++) {
+        //                     var id = powers[i]['id'];
+        //                     var value = powers[i]['value'];
+        //                     motor_power = $('#motor_power_pi').val();
+        //                     console.log(parseFloat(value).toFixed(2) + '   ' + parseFloat(motor_power).toFixed(2));
+        //                     if (parseFloat(value).toFixed(2) === parseFloat(motor_power).toFixed(2)) {
+        //                         is_power = true;
+        //                         $("#power_rating").append("<option value='" + id + "'>" + value + "</option>");
+
+        //                     }
+        //                     // else{
+
+        //                     // }
+        //                 }
+        //                 if (is_power == false) {
+        //                     $("#error-modal-body").html('');
+        //                     $("#error-modal-body").html('<h4>Product does not exist with these values.</h4>');
+        //                     $("#error-modal").show();
+        //                     $("#power_rating").attr('readonly', 'readonly');
+        //                 }
+
+        //             } else {
+        //                 for (var i = 0; i < powers.length; i++) {
+        //                     var id = powers[i]['id'];
+        //                     var value = powers[i]['value'];
+        //                     $("#power_rating").append("<option value='" + id + "'>" + value + "</option>");
+
+        //                     console.log()
+        //                 }
+        //             }
+
+
+        //         },
+        //         error: function (data) {
+
+        //         }
+
+        //     });
+        // });
+
+        // A Code: 13-06-2026 Start
+        $("#no_of_pump").on('change', function () {
+
+            var no_of_pump = $('#no_of_pump').val();
+
             $('#no_of_pumps_pi').val(no_of_pump);
-            $("#power_rating").removeAttr('disabled');
-            $('#controlpanel_form select[id="power_rating"] option:gt(0)').remove().end();
-            $('#controlpanel_form select[id="voltage"] option:gt(0)').remove().end();
-            $('#controlpanel_form select[id="application"] option:gt(0)').remove().end();
-            $('#controlpanel_form select[id="ambient_temp"] option:gt(0)').remove().end();
-            $('#controlpanel_form select[id="stater_type"] option:gt(0)').remove().end();
-            $('#controlpanel_form select[id="communication_protocol"] option:gt(0)').remove().end();
-            $('#controlpanel_form select[id="ip_rating"] option:gt(0)').remove().end();
-            $('#controlpanel_form select[id="component"] option:gt(0)').remove().end();
-            $('#controlpanel_form select[id="enclosure"] option:gt(0)').remove().end();
-            $('#cp_height').val("");
-            $('#cp_width').val("");
-            $('#cp_price').val("");
-            $('#cp_range').val("");
-            $('#cp_starter_type').val("");
-            $("#voltage").attr('disabled', 'disabled');
-            $("#application").attr('disabled', 'disabled');
-            $("#ambient_temp").attr('disabled', 'disabled');
-            $("#stater_type").attr('disabled', 'disabled');
-            $("#communication_protocol").attr('disabled', 'disabled');
-            $("#enclosure").attr('disabled', 'disabled');
-            $("#ip_rating").attr('disabled', 'disabled');
-            $("#component").attr('disabled', 'disabled');
 
+            $("#power_rating").prop('disabled', false);
 
+            // Clear dropdowns
+            $('#power_rating').find('option:gt(0)').remove();
+            $('#voltage').find('option:gt(0)').remove();
+            $('#application').find('option:gt(0)').remove();
+            $('#ambient_temp').find('option:gt(0)').remove();
+            $('#stater_type').find('option:gt(0)').remove();
+            $('#communication_protocol').find('option:gt(0)').remove();
+            $('#ip_rating').find('option:gt(0)').remove();
+            $('#component').find('option:gt(0)').remove();
+            $('#enclosure').find('option:gt(0)').remove();
+
+            // Reset values
+            $('#cp_height,#cp_width,#cp_price,#cp_range,#cp_starter_type').val('');
+
+            // Disable dependent fields
+            $("#voltage,#application,#ambient_temp,#stater_type,#communication_protocol,#enclosure,#ip_rating,#component")
+                .prop('disabled', true);
 
             $.ajax({
-                type: "get",
-                url: "{{url('controlpanel/ajaxFilter')}}",
+                type: "GET",
+                url: "{{ url('controlpanel/ajaxFilter') }}",
                 data: $('#controlpanel_form').serialize(),
+                dataType: "json",
+
+                beforeSend: function () {
+                    console.log("Sending:", $('#controlpanel_form').serialize());
+                },
+
                 success: function (response) {
 
-                    var powers = response.data.powers;
-                    if ($('#pumpType').val() == 'full_pump' || $('#pumpType').val() == 'bareshaft_pump') {
+                    console.log("Response:", response);
 
-                        for (var i = 0; i < powers.length; i++) {
-                            var id = powers[i]['id'];
-                            var value = powers[i]['value'];
-                            motor_power = $('#motor_power_pi').val();
-                            console.log(parseFloat(value).toFixed(2) + '   ' + parseFloat(motor_power).toFixed(2));
-                            if (parseFloat(value).toFixed(2) === parseFloat(motor_power).toFixed(2)) {
+                    if (!response.success) {
+                        return;
+                    }
+
+                    var powers = response.data.powers || [];
+                    var is_power = false; // IMPORTANT
+
+                    if (powers.length === 0) {
+                        console.log("No powers returned from server");
+                        return;
+                    }
+
+                    var pumpType = $('#pumpType').val();
+                    var motor_power = parseFloat($('#motor_power_pi').val());
+
+                    console.log("Pump Type:", pumpType);
+                    console.log("Motor Power:", motor_power);
+
+                    if (pumpType === 'full_pump' || pumpType === 'bareshaft_pump') {
+
+                        $.each(powers, function (index, power) {
+
+                            var value = parseFloat(power.value);
+
+                            console.log(
+                                "DB Power:", value,
+                                "Motor:", motor_power
+                            );
+
+                            if (!isNaN(value) &&
+                                !isNaN(motor_power) &&
+                                value.toFixed(2) === motor_power.toFixed(2)) {
+
                                 is_power = true;
-                                $("#power_rating").append("<option value='" + id + "'>" + value + "</option>");
 
+                                $("#power_rating").append(
+                                    $('<option>', {
+                                        value: power.id,
+                                        text: power.value
+                                    })
+                                );
                             }
-                            // else{
+                        });
 
-                            // }
-                        }
-                        if (is_power == false) {
-                            $("#error-modal-body").html('');
-                            $("#error-modal-body").html('<h4>Product does not exist with these values.</h4>');
+                        if (!is_power) {
+
+                            $("#error-modal-body").html(
+                                '<h4>Product does not exist with these values.</h4>'
+                            );
+
                             $("#error-modal").show();
-                            $("#power_rating").attr('readonly', 'readonly');
+
+                            console.log(
+                                "No matching power found. Motor Power:",
+                                motor_power
+                            );
                         }
 
                     } else {
-                        for (var i = 0; i < powers.length; i++) {
-                            var id = powers[i]['id'];
-                            var value = powers[i]['value'];
-                            $("#power_rating").append("<option value='" + id + "'>" + value + "</option>");
 
-                            console.log()
-                        }
+                        $.each(powers, function (index, power) {
+
+                            $("#power_rating").append(
+                                $('<option>', {
+                                    value: power.id,
+                                    text: power.value
+                                })
+                            );
+                        });
                     }
-
-
                 },
-                error: function (data) {
 
+                error: function (xhr) {
+                    console.log("AJAX Error:", xhr.responseText);
                 }
-
             });
         });
+        // A Code: 13-06-2026 End
 
         $("#power_rating").on('change', function () {
             $("#voltage").removeAttr('disabled');
