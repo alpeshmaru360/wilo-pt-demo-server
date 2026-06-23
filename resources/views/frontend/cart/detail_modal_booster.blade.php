@@ -1,78 +1,77 @@
 <table id="" class="table table-bordered">
     <thead>
-    <tr>
-        <th>Title</th>
-        <th>User Information</th>
-    </tr>
-
+        <tr>
+            <th>Title</th>
+            <th>User Information</th>
+        </tr>
     </thead>
-    <tbody>
-    <tr>
-        <td>Model Number</td>
-        <td>{{ $controlPanelData->model_no}}</td>
-    </tr>
-    <tr>
-        <td>Manifold</td>
-        <td>{{ $controlPanelData->manifold}}</td>
-    </tr>
-    <tr>
-        <td>System Pressure</td>
-        <td>{{ $controlPanelData->system_pressure}}</td>
-    </tr>
-    <tr>
-        <td>Number Of Pump</td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->noofpumps['value']}}</td>
-    </tr>
-    
-    <tr>
-        <td>Motor Power</td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->powers['value']}}</td>
-    </tr>
-    <tr>
-        <td>Supply Voltage</td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->voltages['value']}}</td>
-    </tr>
-    <tr>
-        <td>Application</td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->applications['value']}}</td>
-    </tr>
-    <tr>
-        <td>Ambient Temp</td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->ambienttemps['value']}}</td>
-    </tr>
-    <tr>
-        <td>Starter Type</td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->startertypes['value']}}</td>
-    </tr>
-    <tr>
-        <td>Communication Protocol</td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->comunicationprotocols['value']}}</td>
-    </tr>
-    <tr>
-        <td>IP Rating </td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->ipratings['value']}}</td>
-    </tr>
-    <tr>
-        <td>Component</td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->components['value']}}</td>
-    </tr>
-
-    <tr>
-        <td>Enclosure</td>
-        <td>{{ $controlPanelData->BoosterCPdata[0]->enclousres['value']}}</td>
-    </tr>
-
+    <tbody>        
+        <tr>
+            <td>Model Number</td>
+            <td>{{ $controlPanelData->model_no}}</td>
+        </tr>
+        <tr>
+            <td>Manifold</td>
+            <td>{{ $controlPanelData->manifold}}</td>
+        </tr>
+        <tr>
+            <td>System Pressure</td>
+            <td>{{ $controlPanelData->system_pressure}}</td>
+        </tr>
+        <tr>
+            <td>Number Of Pump</td>
+            <td>{{ $noOfPump }} </td>
+        </tr> 
+        <tr>
+            <td>Motor Power</td>
+            <td>{{ !empty($motorPower) ? $motorPower . ' Kw' : '' }}</td>           
+        </tr>
+        <tr>
+            <td>Supply Voltage</td>
+            <td>{{
+                    !empty($supplyVoltage)
+                        ? $supplyVoltage . ' V'
+                        : (!empty($controlPanelData->supply_voltage) ? $controlPanelData->supply_voltage . ' V' : '')
+                }}
+            </td>
+        </tr>
+        <tr>
+            <td>Application</td>
+            <td>{{ $application }} </td>
+        </tr>
+        <tr>
+            <td>Ambient Temp</td>
+            <td>{{ !empty($ambientTemp) ? $ambientTemp . ' °C' : '' }}</td>
+        </tr>
+        <tr>
+            <td>Starter Type</td>
+            <td>{{ $starterType }}</td>
+        </tr>
+        <tr>
+            <td>Communication Protocol</td>
+            <td>{{ $communicationProtocol }} </td>
+        </tr>
+        <tr>
+            <td>IP Rating </td>
+            <td>{{ $ipRating }}</td>
+        </tr>
+        <tr>
+            <td>Component</td>
+            <td>{{ $component }} </td>
+        </tr>
+        <tr>
+            <td>Enclosure</td>
+            <td>{{ $enclosure }} </td>
+        </tr>
     </tbody>
 </table>
 
 @if($addersData)
     <table id="" class="table table-bordered">
         <thead>
-        <tr>
-
-            <th>Optional Electrical Data</th>
-        </tr>
-
+            <tr>
+                <th>Optional Electrical Data</th>
+            </tr>
         </thead>
         <tbody>
         @foreach($addersData as $row)
@@ -104,8 +103,7 @@
                 @endif
               </td>
             </tr>
-        @endforeach
-        
+        @endforeach        
         </tbody>
     </table>
 @endif

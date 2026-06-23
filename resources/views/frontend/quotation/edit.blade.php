@@ -72,22 +72,20 @@
                                 </tr>
                             </thead>
                             @if($quotation != "")
-                            <tbody>
-
+                            <tbody>                                
                                 @if($controlPanelCartData->isNotEmpty())
                                 @foreach($controlPanelCartData as $key=> $val)
                                     <tr id="control_panel_data-{{$val['id']}}">                                       
-
                                         <!-- A Code: 01-04-2026 End - Model not Open -->
                                         <td>
                                             <a class="detail-modal-cp" href="javascript:void(0)">
-                                                {{$val->applications['value'] }} {{$val->noofpumps['value'] }} x {{ $val->powers['value'] }} {{$val->starter_code}}
+                                                {{$val->applications['value'] }} {{--$val->noofpumps['value'] --}} x {{ $val->powers['value'] }} {{$val->starter_code}}
                                             </a>
                                         </td>                                        
                                         <td><a class="detail-modal-cp" href="javascript:void(0)">
                                                 {{$val['full_article_number']}}
                                             </a>
-                                        </td>
+                                        </td>                                        
                                         <!-- A Code: 01-04-2026 End - Model not Open -->
 
                                         <td>Control Panel </td>
@@ -103,7 +101,7 @@
                                             </div>
                                         </td>
                                         <input type="hidden" class="cp-id" value="{{$val['id']}}">
-                                        <input type="hidden"  id="cp-{{$val['id']}}" >
+                                        <input type="hidden"  id="cp-{{$val['id']}}" >                                        
                                         <input type="hidden" class="total-price-input" name="" value="{{$val->total_price}}"  min="1" max="" />
                                         <td class="total-price">{{ App\Helpers\CurrencyHelper::withCurrency($val->price*$val->qty) }}</td>
                                         <td>
@@ -117,7 +115,7 @@
                                     </tr>
                                     <?php $totalPrice += round($val->price * $val->qty); ?>
                                 @endforeach
-                                @endif
+                                @endif                                
 
                                 @if($atmosCartData->isNotEmpty())
                                 @foreach($atmosCartData as $key=> $val)
@@ -327,22 +325,50 @@
                                     <tr id = "booster_cart_data-{{$val['id']}}">
                                         <td style="display: none;"><input type="checkbox" checked name="booster_checked_id" value="{{$val['id']}}"></td>
                                         <td>
+                                            <!-- A Code: 17-06-2026 Start -->
                                             <a class="detail-modal-booster" href="javascript:void(0)">
                                                 @php
+                                                    $request_data = DB::table('control_panels')->where('id', $val->cp_id)->first();
+                                                    
+                                                    $cpNo_of_pump = DB::table('number_of_pumps')->where('id', $request_data->no_of_pump_id)->value('value');
+                                                    $cpDetails = optional($val->cpDetails); // NEW booster_carts_cp_details Data
+                                                    if (!optional($cpDetails)->no_of_pump)
+                                                    {
+                                                        $boosterData = $val->boosterCpDataOld[0]; // Old control_panels Data                                                    
+                                                    }else{
+                                                        $boosterData = $val->boosterCpData[0]; // NEW control_panels_master Data                                                    
+                                                    }
+
+                                                    // Display New booster_carts_cp_details 
+                                                    // But When it's Empty Then Display NEW control_panels_master Data
+                                                    // if NEW control_panels_master Data with Multiple Values Then Display According to OLD control_panels Data
+
+                                                    $getMatchingValue = function ($masterValue, $selectedValue) {
+                                                        if (str_contains($masterValue, ',')) {
+                                                            $options = array_map('trim', explode(',', $masterValue));
+                                                            return in_array($selectedValue, $options) ? $selectedValue : null;
+                                                        }
+                                                        return $masterValue;
+                                                    };
+                                                    $noOfPump = $cpDetails->no_of_pump 
+                                                        ?? $getMatchingValue($boosterData->no_of_pumps, $cpNo_of_pump);
+
                                                     $const =null;
-                                                    // dd(str_starts_with($val->boosterCpData[0]->table_name, 'standard_'));
-                                                    if(str_starts_with($val->boosterCpData[0]->table_name, 'basic_')  == true)
+                                                    if(str_starts_with($boosterData->table_name, 'basic_')  == true){
                                                         $const = "COE";
-                                                    else{
+                                                    }else{
                                                         $const = 'CO';
                                                         $array_check = array(3,4,7);
-                                                        if(in_array($val->boosterCpData[0]->stater_type_id,$array_check) ){
+
+                                                        $stater_type_id = DB::table('starter_types')->where('value', trim($cpDetails->stater_type))->value('id');
+                                                        if(in_array($stater_type_id,$array_check) ){
                                                             $const = 'COR';
                                                         }
                                                     }
                                                 @endphp
-                                                {{$const}} {{$val->boosterCpData[0]->noofpumps['value'] }} {{$val->model_no }}/{{$val->boosterCpData[0]->starter_code}}/AE
+                                                {{$const}} {{ $noOfPump }} {{$val->model_no }}/{{$boosterData->code}}/AE
                                             </a>
+                                            <!-- A Code: 17-06-2026 End -->
                                         </td>
                                         <td>
                                             <a class="detail-modal" href="javascript:void(0)">
@@ -394,6 +420,7 @@
                                     <?php $totalPrice += round($val->price * $val->qty); ?>
                                 @endforeach
                                 @endif
+                                
 
                                 {{-- booster cart ends--}}
                                 {{-- Fire Fighting Pump Start --}}

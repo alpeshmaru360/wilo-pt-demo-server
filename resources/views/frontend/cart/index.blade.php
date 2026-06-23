@@ -276,21 +276,46 @@
                                         <tr>
                                             <td style="display: none;"><input type="checkbox" checked name="booster_checked_id" value="{{$val['id']}}"></td>
                                             <td>
+                                                <!-- A Code: 17-06-2026 Start -->
                                                 <a class="detail-modal-booster" href="javascript:void(0)">
-                                                    @php
+                                                    @php     
+                                                        $request_data = DB::table('control_panels')->where('id', $val->cp_id)->first();
+                                                        
+                                                        $cpNo_of_pump = DB::table('number_of_pumps')->where('id', $request_data->no_of_pump_id)->value('value');
+                                                        $cpDetails = optional($val->cpDetails); // NEW booster_carts_cp_details Data
+                                                        
+                                                        
+                                                        if (!optional($cpDetails)->no_of_pump)
+                                                        {                                                            
+                                                            $boosterData = $val->boosterCpDataOld[0]; // Old control_panels Data  
+                                                        }else{   
+                                                            $boosterData = optional($val->boosterCpData)[0]; // NEW control_panels_master Data   
+                                                                                                                                                                    
+                                                        }                                                       
+                                                        
+                                                        // Display New booster_carts_cp_details 
+                                                        // But When it's Empty Then Display NEW control_panels_master Data
+                                                        // if NEW control_panels_master Data with Multiple Values Then Display According to OLD control_panels Data
+                                                        
+                                                        $noOfPump = $cpDetails->no_of_pump ?? $cpNo_of_pump;                                                        
+                                                    
                                                         $const =null;
-                                                        if(str_starts_with($val->boosterCpData[0]->table_name, 'basic_')  == true)
+                                                        if(str_starts_with(optional($boosterData)->table_name, 'basic_')  == true){
                                                             $const = "COE";
-                                                        else{
+                                                        }else{
                                                             $const = 'CO';
                                                             $array_check = array(3,4,7);
-                                                            if(in_array($val->boosterCpData[0]->stater_type_id,$array_check) ){
+
+                                                            $stater_type_id = DB::table('starter_types')->where('value', trim($cpDetails->stater_type))->value('id');
+                                                            if(in_array($stater_type_id,$array_check) ){
                                                                 $const = 'COR';
                                                             }
                                                         }
                                                     @endphp
-                                                    {{$const}} {{$val->boosterCpData[0]->noofpumps['value']}} {{$val->model_no}}/{{$val->boosterCpData[0]->starter_code}}/AE
+                                                    {{$const}} {{ $noOfPump }} {{$val->model_no}}/{{optional($boosterData)->code}}/AE
+                                                    
                                                 </a>
+                                                <!-- A Code: 17-06-2026 End -->
                                                 <br>
                                                     @if(!empty($val['mechanical_article_number']))
                                                     [{{$val['mechanical_article_number']}} - Mechnical Assembly]
