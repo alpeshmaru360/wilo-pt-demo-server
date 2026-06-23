@@ -115,7 +115,9 @@
                                             {{--                            </select>--}}
                                     </div>
                                     <div class="formFields right">
-                                        <span class="formArrowIcon"><img src=="{{url('fassets/images/arrowDownIcon.png')}}" /></span>
+                                        <!-- A Code: 15-06-2026 Start -->
+                                        <span class="formArrowIcon"><img src="{{url('fassets/images/arrowDownIcon.png')}}" /></span>
+                                        <!-- A Code: 15-06-2026 End -->
                                         <select name="no_of_pumps_pi" id="no_of_pumps_pi" class="formInput" disabled>
                                             <option value="">Number of Pumps*</option>
 
@@ -713,7 +715,6 @@
                             //     option.text = array[i].model_no;
                             //     selectList.appendChild(option);
                             // }
-
                             $.each(array, function (key, value) {
                                 $('#pump_model_pi')
                                         .append($("<option></option>")
@@ -2217,7 +2218,8 @@ $('#control_panel_price_for_booster').val(response.data.control_panel_price_for_
                         var control_panel_price_for_booster = response.data.control_panel_price_for_booster;
                         var cp_width = response.data.cp_width;
                         var pump_model =  response.data.pump_model;
-                        var no_of_pumps = response.data['controlPanel'][0]['no_of_pump_id'];
+                        //var no_of_pumps = response.data['controlPanel'][0]['no_of_pump_id'];
+                        var no_of_pumps = response.data['no_of_pump']; // A Code: 22-06-2026
                         var power =  response.data['powers'][0]['value'];
                         var voltage =  response.data['voltages'][0]['value'];
                         var adder_code_price = $('#code-price').val();
@@ -2315,6 +2317,122 @@ $('#control_panel_price_for_booster').val(response.data.control_panel_price_for_
             }
         }
     });
+
+    // A Code: 19-06-2026 Start
+    // $("#full_article_number").bind('keypress', function (e) {
+    //     if(e.which == 13) {
+    //         if ($(this).val().length > 0) {
+    //         e.preventDefault();
+    //         var full_article_number = $('#full_article_number').val();
+    //         var adder_code_price = $('#code-price').val();
+    //         var enclousreItem = $('#adder-enclousre-area-item').val();
+    //         var code_price = $("#code-price").val();
+    //         $.ajax({
+    //             type: "get",
+    //             url: "{{url('/controlpanel/searchAjaxFilter')}}",
+    //             data: "full_article_number=" + full_article_number + "&code_price=" + adder_code_price + "&enclousreItem=" + enclousreItem,
+    //             success: function (response){
+    //                 if (response.data.cp_records_html){
+    //                     var range =response.data['ranges'][0]['id'];
+    //                     var starter_type =response.data['startertypes'][0]['id'];
+    //                     var cp_price = response.data.cp_price;
+    //                     var cp_id = response.data.cp_id;
+    //                     var full_article_number = response.data.full_article_number;
+    //                     var cp_height = response.data.cp_height;
+    //                     var control_panel_price_for_booster = response.data.control_panel_price_for_booster;
+    //                     var cp_width = response.data.cp_width;
+    //                     var pump_model =  response.data.pump_model;
+    //                     //var no_of_pumps = response.data['controlPanel'][0]['no_of_pump_id'];
+    //                     var no_of_pumps = response.data['no_of_pump_id'];
+    //                     var power =  response.data['powers'][0]['value'];
+    //                     var voltage =  response.data['voltages'][0]['value'];
+    //                     var adder_code_price = $('#code-price').val();
+    //                     var enclousreItem = $('#adder-enclousre-area-item').val();
+    //                     if(enclousreItem==''){
+    //                         var enclousreItem = JSON.stringify(response.data.enclousreItem);
+    //                         $('#adder-enclousre-area-item').val(enclousreItem);
+    //                     }
+    //                     var pump_height_pi = $('#pump_height_pi').val();
+    //                     var system_pressure = $('#system_pressure_pi option:selected').val();
+    //                     var unit_price_pi = $('#unit_price_pi').val();
+    //                     var code_price = $("#code-price").val(); //Electrical adder code price
+    //                     var article_number = $('#article_number_pi').val();
+    //                     var mechanical_code_price = $("#code-price-mechanical").val(); //Mechanical adder code price
+    //                     $.ajax({
+    //                         type: "get",
+    //                         url: "{{route('boosterset.searchCalculateMechanicalComponent')}}",
+    //                         data: {
+    //                             full_article_number:full_article_number,
+    //                             pump_model: pump_model, 
+    //                             no_of_pumps: no_of_pumps,
+    //                             pump_height: pump_height_pi,
+    //                             panel_height: cp_height, 
+    //                             panel_width: cp_width,
+    //                             system_pressure: system_pressure,
+    //                             starter_type: starter_type, 
+    //                             range: range,
+    //                             voltage: voltage, 
+    //                             power: power, 
+    //                             cp_price: control_panel_price_for_booster, 
+    //                             pump_unit_price: unit_price_pi, 
+    //                             code_price: code_price,
+    //                             enclousreItem:enclousreItem,
+    //                         },
+    //                         success: function (response){
+    //                             if (response.data.booster_price){
+    //                                 $("#code-price-mechanical").val(response.data.mechanical_code_price);
+    //                                 var adder_code_price = $('#code-price').val();
+    //                                 var enclousreItem = $('#adder-enclousre-area-item').val();
+    //                                 var totalPrice = $("#total-price").val(response.data.booster_price);
+    //                                 var standard_component_price = $("#standard_component_price").val(response.data.standard_component_price);
+    //                                 var mechanical_system_price = $("#mechanical_system_price").val(response.data.mechanical_system_price);
+    //                                 var cablePrice = $("#cablePrice").val(response.data.cablePrice);
+    //                                 var ptp_distance_id = $("#ptp-distance-id").val(response.data.ptp_distance_id);
+    //                                 var mechanicalcomponent_billofmaterial = response.data.bill_of_material_booster; //retrieve array
+
+    //                                 var mechanical_items_price = $("#mechanical_items_price").val(response.data.mechanical_items_price);
+    //                                 var electrical_items_price = $("#electrical_items_price").val(response.data.electrical_items_price);
+
+    //                                 mechanicalcomponent_billofmaterial = JSON.stringify(mechanicalcomponent_billofmaterial);
+    //                                 $('#mechanicalcomponent_billofmaterial').val(mechanicalcomponent_billofmaterial);
+    //                                 $("#master-price-record").html('');
+    //                                 $("#master-price-record").html(response.data.html);
+    //                                 $("#myModal").show();
+    //                             } else {
+    //                                 console.log('not valid');
+    //                                 if (response.data.html) {
+    //                                     $("#error-modal-body").html('');
+    //                                     $("#error-modal-body").html('<h4>' + response.data.html + '</h4>');
+    //                                     $("#error-modal").show();
+    //                                 }
+    //                                 if (response.data.validation_messages) {
+    //                                     let text = "";
+    //                                     document.getElementById("error-modal-body").innerHTML = text;
+    //                                     message = response.data.validation_messages;
+    //                                     Object.keys(message).forEach(function (key) {
+    //                                         $("#error-modal-body").html('<h4>' + message[key] + '</h4><br>');
+    //                                     });
+    //                                     $("#error-modal").show();
+    //                                 }
+    //                             }
+    //                         },
+    //                         error:function(data){
+    //                         }
+    //                     });
+    //                 }
+    //                 else
+    //                 {
+    //                     $("#error-modal").show();
+    //                     $("#error-modal-body").html(response.data.cp_records_html_error);
+    //                 }
+    //             },
+    //                 error: function(data){
+    //             }
+    //         });
+    //         }
+    //     }
+    // });
+    // A Code: 19-06-2026 End
 </script>
 @stop
 

@@ -35,7 +35,8 @@
                                 @php
                                 $j = 1
                                 @endphp
-                                @if($items->isNotEmpty())
+                                
+                                @if($items->isNotEmpty())                                
                                 @if($boosterCartData)
                                     <tr>
                                         <td>1</td>
@@ -48,17 +49,23 @@
                                             <td></td>
                                             <td>{{$boosterCartData->pump_price}}</td>
                                         @endif
+                                        
+                                        {{--
                                         <td>
                                             {{$boosterCartData->boosterCpData[0]->no_of_pump_id}}
-                                        </td>
-                                        {{--@if (auth()->user()->isAdmin())--}}
-                                        {{--<td>--}}
-                                        {{--{{$item->price*$item->qty }}--}}
-                                        {{--</td>--}}
-                                        {{--@endif--}}
+                                        </td>                                     
                                         @if (auth()->user()->isAdmin())
-                                            <td>{{$boosterCartData->pump_price * $boosterCartData->boosterCpData[0]->no_of_pump_id}}</td>
+                                            <td>{{$boosterCartData->pump_price * $boosterCartData->boosterCpData[0]->no_of_pump_id }}</td>
+                                        @endif 
+                                        --}}                                       
+                                        <!-- A Code: 22-06-2026 Start -->
+                                        <td>
+                                            {{ optional($boosterCartData->boosterCpData[0] ?? null)->no_of_pumps }}
+                                        </td>                                     
+                                        @if (auth()->user()->isAdmin())
+                                            <td>{{$boosterCartData->pump_price * optional($boosterCartData->boosterCpData[0] ?? null)->no_of_pumps}}</td>
                                         @endif
+                                        <!-- A Code: 22-06-2026 End -->
                                     </tr>
                                 @endif
 
@@ -145,6 +152,7 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                
                                 @if($cpBoosterItems->isNotEmpty())
                                 @foreach($cpBoosterItems as $key=> $item)
                                     @if(auth()->user()->isAdmin())

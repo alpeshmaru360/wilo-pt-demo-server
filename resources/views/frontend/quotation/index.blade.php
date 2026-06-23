@@ -300,21 +300,46 @@
                                 @foreach($boosterCartData as $key=> $val)
                                 <tr>
                                     <td>
+                                        <!-- A Code: 17-06-2026 Start -->
                                         <a class="detail-modal-booster" href="javascript:void(0)">
-                                            @php
+                                            @php     
+                                                $request_data = DB::table('control_panels')->where('id', $val->cp_id)->first();
+                                                $cpNo_of_pump = DB::table('number_of_pumps')->where('id', $request_data->no_of_pump_id)->value('value');
+                                                $cpDetails = optional($val->cpDetails); // NEW booster_carts_cp_details 
+                                                if (!optional($cpDetails)->no_of_pump)
+                                                {
+                                                    $boosterData = $val->boosterCpDataOld[0]; // Old control_panels Data                                                    
+                                                }else{
+                                                    $boosterData = $val->boosterCpData[0]; // NEW control_panels_master Data                                                    
+                                                }
+                                                // Display New booster_carts_cp_details 
+                                                // But When it's Empty Then Display NEW control_panels_master Data
+                                                // if NEW control_panels_master Data with Multiple Values Then Display According to OLD control_panels Data
+
+                                                $getMatchingValue = function ($masterValue, $selectedValue) {
+                                                    if (str_contains($masterValue, ',')) {
+                                                        $options = array_map('trim', explode(',', $masterValue));
+                                                        return in_array($selectedValue, $options) ? $selectedValue : null;
+                                                    }
+                                                    return $masterValue;
+                                                };
+                                                $noOfPump = $cpDetails->no_of_pump 
+                                                    ?? $getMatchingValue($boosterData->no_of_pumps, $cpNo_of_pump);
+                                                    
                                                 $const =null;
-                                                // dd(str_starts_with($val->boosterCpData[0]->table_name, 'standard_'));
-                                                if(str_starts_with($val->boosterCpData[0]->table_name, 'basic_')  == true)
+                                                if(str_starts_with($boosterData->table_name, 'basic_')  == true){
                                                     $const = "COE";
-                                                else{
-                                                     $const = 'CO';
+                                                }else{
+                                                    $const = 'CO';
                                                     $array_check = array(3,4,7);
-                                                    if(in_array($val->boosterCpData[0]->stater_type_id,$array_check) ){
+                                                    
+                                                    $stater_type_id = DB::table('starter_types')->where('value', trim($cpDetails->stater_type))->value('id');
+                                                    if(in_array($stater_type_id,$array_check) ){
                                                         $const = 'COR';
                                                     }
                                                 }
                                             @endphp
-                                            {{$const}} {{$val->boosterCpData[0]->noofpumps['value'] }} {{$val->model_no }}/{{$val->boosterCpData[0]->starter_code}}/AE
+                                            {{$const}} {{ $noOfPump }} {{$val->model_no }}/{{$boosterData->code}}/AE
 											<br>
                                             @if(!empty($val['mechanical_article_number']))
                                             [{{$val['mechanical_article_number']}} - Mechnical Assembly]
@@ -324,6 +349,11 @@
                                             [{{$val['electrical_article_number']}} - Control panel]
 										@endif
                                         </a>
+                                        <!-- A Code: 17-06-2026 End -->
+
+                                        <!-- A Code: 15-06-2026 Start -->
+                                        <input type="hidden" class="booster-cart-id" value="{{$val['id']}}">
+                                        <!-- A Code: 15-06-2026 End -->
                                     </td>
                                     <td>
                                         <a class="detail-modal" href="javascript:void(0)">
