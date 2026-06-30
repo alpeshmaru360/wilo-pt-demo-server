@@ -40,11 +40,77 @@ class ControlpanelController extends Controller{
         $electricalLists = DB::table('main_electrical_list')->get();
         return view('frontend.controlpanel.index', compact('numberOfPumps', 'electricalLists'));
     }
+
+    // short code change 1 comment this ajaxFilter starts
+    // short code change 1 comment this ajaxFilter ends
+
+    // short code change 2 add this ajaxFilter starts
+    // short code change 2 add this ajaxFilter ends
     
     // A Code: 27-03-2026 Start
     public function ajaxFilter(Request $request)
     {
         $controlPanelData = ControlPanelsMaster::query();
+
+        // Filters (CSV safe with space fix)
+        // if ($request->no_of_pump) {
+        //     $controlPanelData->whereRaw("FIND_IN_SET(?, REPLACE(no_of_pumps, ' ', ''))", [$request->no_of_pump]);
+        // }
+
+        // if ($request->power_rating) {
+        //     $controlPanelData->whereRaw("FIND_IN_SET(?, REPLACE(power_rating, ' ', ''))", [$request->power_rating]);
+        // }
+
+        // if ($request->voltage) {
+        //     $controlPanelData->whereRaw("FIND_IN_SET(?, REPLACE(power_supply, ' ', ''))", [$request->voltage]);
+        // }
+
+        // if ($request->application) {
+        //     $controlPanelData->whereRaw("FIND_IN_SET(?, REPLACE(applications, ' ', ''))", [$request->application]);
+        // }
+
+        // if ($request->ambient_temp) {
+        //     $controlPanelData->whereRaw("FIND_IN_SET(?, REPLACE(min_of_ambient_temp, ' ', ''))", [$request->ambient_temp]);
+        // }
+
+        // if ($request->stater_type) {
+        //     $controlPanelData->where('starter_type', $request->stater_type);
+        // }
+
+        // if ($request->communication_protocol) {
+        //     //$controlPanelData->whereRaw("FIND_IN_SET(?, REPLACE(communication_protocol, ' ', ''))", [$request->communication_protocol]);
+        //     $controlPanelData->whereRaw("FIND_IN_SET(REPLACE(?, ' ', ''), REPLACE(communication_protocol, ' ', ''))",[$request->communication_protocol]); // A Code: 30-06-2026
+        // }
+
+        // if ($request->ip_rating) {
+        //     $controlPanelData->where('ip_rating', $request->ip_rating);
+        // }
+
+        // if ($request->component) {
+        //     $controlPanelData->whereRaw("FIND_IN_SET(?, REPLACE(components, ' ', ''))", [$request->component]);
+        // }
+
+        // // A Code: 02-04-2026 Start (enclosure CSV fix)
+        // if ($request->enclosure) {
+        //     // Remove extra spaces
+        //     $enclosures = array_map('trim', explode(',', $request->enclosure));
+
+        //     // A Code: 06-04-2026 Start
+        //     $controlPanelData->where(function ($query) use ($enclosures) {
+        //         foreach ($enclosures as $enclosure) {
+        //             $query->orWhereRaw(
+        //                 "FIND_IN_SET(REPLACE(?, ' ', ''), REPLACE(enclosure, ' ', ''))",
+        //                 [$enclosure]
+        //             );
+        //         }
+        //     });   
+        //     // A Code: 06-04-2026 End   
+        // }
+        // // A Code: 02-04-2026 End (enclosure CSV fix)
+
+        // if ($request->range) {
+        //     $controlPanelData->where('range', $request->range);
+        // }
 
         // A Code: 30-06-2026 Start
 
@@ -150,6 +216,7 @@ class ControlpanelController extends Controller{
             }
 
             $ipratings[] = ['id'=>$row->ip_rating,'value'=>$row->ip_rating];
+            //$enclousres[] = ['id'=>$row->enclosure,'value'=>$row->enclosure];
 
             // A Code: 02-04-2026 Start (enclosure CSV fix)
             foreach(explode(',', $row->enclosure) as $val){
@@ -201,6 +268,10 @@ class ControlpanelController extends Controller{
 
             // Final column name (NO spaces anywhere)
             $columnName = $idberOfPump . 'x' . $powerFormatted . 'kwx' . $voltage . 'v';
+            
+            // $startertypes = $panel->startertypes['value'];
+            // $starterCode = $panel->starter_code;
+            // $range = $panel->ranges['value'];
 
             // A Code: 23-05-2026 Start
             $startertypes = $panel->startertypes['value'] ?? '';
@@ -210,9 +281,11 @@ class ControlpanelController extends Controller{
 
             $cpRecordsData = [];
             $returnHTML = '';
+            //$price = 0.00;
 
             // A Code: 27-03-2026 End
 
+            //dd($panel->table_name);
             $tableName = $panel->table_name;
             $price = 0;
 
@@ -255,6 +328,7 @@ class ControlpanelController extends Controller{
                         {
                             foreach($arrayResult as $key => $val) {
                                 
+                                // $price += $this->calculatePriceInItem($val, $request, $columnName,$cpRecords1);  13-12-2024 price issue
                                 $unitPrice = $this->calculatePriceInItem($request, $columnName, $cpRecords1,$val);
                                 $price += $unitPrice;                               
                             }                                                
@@ -331,7 +405,20 @@ class ControlpanelController extends Controller{
     
     // A Code: 22-06-2026 Start
     public function searchAjaxFilter(Request $request) 
-    {     
+    {
+        // A Code: 22-06-2026 Start
+        $getValue = function ($table, $id) {
+            return !empty($id)
+                ? DB::table($table)->where('id', $id)->value('value')
+                : null;
+        };
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)->where('value', $value)->value('id')
+                : null;
+        };
+        // A Code: 22-06-2026 End
+
         $idberOfPumps = NumberOfPump::select('id', 'value')->get();
 		$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
 		if(auth()->user()->country_id == 6){
@@ -345,17 +432,19 @@ class ControlpanelController extends Controller{
             $boosterCartCpDetail = BoosterCartCpDetail::where('booster_cart_id', $BoosterCartData->id)->latest('id')->first();
             if ($boosterCartCpDetail) { 
 
-                $request->no_of_pump = self::getIdByValue('number_of_pumps', $boosterCartCpDetail->no_of_pump);
-                $request->power_rating = self::getIdByValue('powers', $boosterCartCpDetail->power);
-                $request->voltage = self::getIdByValue('voltages', $boosterCartCpDetail->voltage);
-                $request->application = self::getIdByValue('applications', $boosterCartCpDetail->application);
-                $request->ambient_temp = self::getIdByValue('ambient_temps', $boosterCartCpDetail->ambient_temp);
-                $request->stater_type = self::getIdByValue('starter_types', $boosterCartCpDetail->stater_type);
-                $request->communication_protocol = self::getIdByValue('comunication_protocols', $boosterCartCpDetail->communication_protocol);
-                $request->ip_rating = self::getIdByValue('ip_ratings', $boosterCartCpDetail->ip_rating);
-                $request->component = self::getIdByValue('components', $boosterCartCpDetail->component);
-                $request->enclosure = self::getIdByValue('enclousres', $boosterCartCpDetail->enclosure);
-                $request->range = self::getIdByValue('ranges', $boosterCartCpDetail->range);
+                //$booster_cart_cp_id = $BoosterCartData->cp_id;
+
+                $request->no_of_pump = $getIdByValue('number_of_pumps', $boosterCartCpDetail->no_of_pump);
+                $request->power_rating = $getIdByValue('powers', $boosterCartCpDetail->power);
+                $request->voltage = $getIdByValue('voltages', $boosterCartCpDetail->voltage);
+                $request->application = $getIdByValue('applications', $boosterCartCpDetail->application);
+                $request->ambient_temp = $getIdByValue('ambient_temps', $boosterCartCpDetail->ambient_temp);
+                $request->stater_type = $getIdByValue('starter_types', $boosterCartCpDetail->stater_type);
+                $request->communication_protocol = $getIdByValue('comunication_protocols', $boosterCartCpDetail->communication_protocol);
+                $request->ip_rating = $getIdByValue('ip_ratings', $boosterCartCpDetail->ip_rating);
+                $request->component = $getIdByValue('components', $boosterCartCpDetail->component);
+                $request->enclosure = $getIdByValue('enclousres', $boosterCartCpDetail->enclosure);
+                $request->range = $getIdByValue('ranges', $boosterCartCpDetail->range);
 
             }else{
 
@@ -377,19 +466,33 @@ class ControlpanelController extends Controller{
             }
 
             // Find New Control Panel Data on base of Request Date
-            $cpNo_of_pump = self::getValue('number_of_pumps', $request->no_of_pump);
-            $cpPower = self::getValue('powers', $request->power_rating);
-            $cpVoltage = self::getValue('voltages', $request->voltage);
-            $cpApplication = self::getValue('applications', $request->application);
-            $cpAmbient_temp = self::getValue('ambient_temps', $request->ambient_temp);
-            $cpStater_type = self::getValue('starter_types', $request->stater_type);
-            $cpCommunication_protocol = self::getValue('comunication_protocols', $request->communication_protocol);
-            $cpIp_rating = self::getValue('ip_ratings', $request->ip_rating);
-            $cpComponent = self::getValue('components', $request->component);
-            $cpEnclosure = self::getValue('enclousres', $request->enclosure);
-            $cpRange = self::getValue('ranges', $request->range);             
+            $cpNo_of_pump = $getValue('number_of_pumps', $request->no_of_pump);
+            $cpPower = $getValue('powers', $request->power_rating);
+            $cpVoltage = $getValue('voltages', $request->voltage);
+            $cpApplication = $getValue('applications', $request->application);
+            $cpAmbient_temp = $getValue('ambient_temps', $request->ambient_temp);
+            $cpStater_type = $getValue('starter_types', $request->stater_type);
+            $cpCommunication_protocol = $getValue('comunication_protocols', $request->communication_protocol);
+            $cpIp_rating = $getValue('ip_ratings', $request->ip_rating);
+            $cpComponent = $getValue('components', $request->component);
+            $cpEnclosure = $getValue('enclousres', $request->enclosure); 
+            $cpRange = $getValue('ranges', $request->range);             
             
-            $power1 = number_format($cpPower, 2, '.', ''); // A Code: 02-03-2026   
+            $power1 = number_format($cpPower, 2, '.', ''); // A Code: 02-03-2026
+            // $NewcontrolPanelData = DB::table('control_panels_master')
+            //     ->whereRaw("FIND_IN_SET(?, REPLACE(no_of_pumps, ' ', ''))", [$cpNo_of_pump])
+            //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_rating, ' ', ''))", [$power1])
+            //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_supply, ' ', ''))", [$cpVoltage])
+            //     ->whereRaw("FIND_IN_SET(?, REPLACE(applications, ' ', ''))", [$cpApplication])
+            //     ->whereRaw("FIND_IN_SET(?, REPLACE(min_of_ambient_temp, ' ', ''))", [$cpAmbient_temp])
+            //     ->where('starter_type', $cpStater_type)
+            //     ->whereRaw("FIND_IN_SET(?, REPLACE(communication_protocol, ' ', ''))", [$cpCommunication_protocol])
+            //     ->where('ip_rating', $cpIp_rating)
+            //     ->whereRaw("FIND_IN_SET(?, REPLACE(components, ' ', ''))", [$cpComponent])
+            //     ->whereRaw("FIND_IN_SET(?, REPLACE(enclosure, ' ', ''))", [$cpEnclosure])   
+            //     ->where('range', $cpRange)
+            //     ->first();
+
             // A Code: 30-06-2026 Start
             $NewcontrolPanelData = DB::table('control_panels_master')
                 ->whereRaw("FIND_IN_SET(?, no_of_pumps)", [$cpNo_of_pump])
@@ -468,7 +571,9 @@ class ControlpanelController extends Controller{
                 if(isset($request->enclosure) && !empty($request->enclosure)){                    
 
                     if (isset($data['controlPanel']->id) && !empty($data['controlPanel']->id)) 
-                    {                        
+                    {
+                        
+                        //$idberOfPump = $data['controlPanel'][0]->noofpumps['value'];
                         $idberOfPump = $cpNo_of_pump;                       
 
                         if (ControlPanelsMaster::isIntegerColumn($data['powers'][0]['value'])) { // Integer Column
@@ -481,9 +586,12 @@ class ControlpanelController extends Controller{
                             $columnName = $idberOfPump . 'x' . $power . "kwx" . $voltage . 'v';
                         }
 
+                        //$startertypes = $data['controlPanel'][0]->startertypes['value'];  
                         $startertypes = $data['startertypes'][0]['value'];
+                        //$starterCode = $data['controlPanel'][0]->starter_code;
                         $starterCode = $data['controlPanel']->code;
                         $range = $data['ranges'][0]['value'];
+                        //$tableName = $data['controlPanel'][0]->table_name;
                         $tableName = $data['controlPanel']->table_name;
 
                         $cpRecordsData = [];
@@ -503,7 +611,10 @@ class ControlpanelController extends Controller{
                                 $enclousreAdderItemData = null;
                                 if ($BoosterCartData->adder_ids && $BoosterCartData->adder_ids != '') {
 
+                                    //$addersData = $this->calculateAddersSearchByArticle($BoosterCartData->cp_id, $BoosterCartData->adder_ids, $idberOfPump, $data['controlPanel'][0]->powers['value'], $voltage, $tableName, $columnName,$component); //Code ids
+                                    //dd($BoosterCartData->cp_id, $booster_cart_cp_id);
                                     $addersData = $this->calculateAddersSearchByArticle(
+                                                        //$BoosterCartData->cp_id, 
                                                         $booster_cart_cp_id, // A Code: 25-06-2026
                                                         $BoosterCartData->adder_ids, 
                                                         $idberOfPump, 
@@ -528,8 +639,10 @@ class ControlpanelController extends Controller{
                                         $cp_height = 0;
                                         $cp_width = 0;
                                     }
-
+                                    // 
                                     //here search ajax calculate
+                                    //$enclourse_exist = $this->searchByArticleCalculatePriceInItem($data['controlPanel'][0]->components['id'], $data['controlPanel'][0]->enclousres['id'], $data['controlPanel'][0]->startertypes['id'], $enclousreAdderItemData, $columnName,$cpRecords1,$arrayResult[0]);
+
                                     $enclourse_exist = $this->searchByArticleCalculatePriceInItem(
                                                                 $data['components'][0]['id'],
                                                                 $data['enclousres'][0]['id'], 
@@ -543,6 +656,7 @@ class ControlpanelController extends Controller{
                                     else
                                     {
                                         foreach($arrayResult as $key => $val) {
+                                            //$price += $this->searchByArticleCalculatePriceInItem($data['controlPanel'][0]->components['id'], $data['controlPanel'][0]->enclousres['id'], $data['controlPanel'][0]->startertypes['id'], $enclousreAdderItemData, $columnName,$cpRecords1,$val);
                                             $price += $this->searchByArticleCalculatePriceInItem(
                                                                 $data['components'][0]['id'],
                                                                 $data['enclousres'][0]['id'], 
@@ -563,7 +677,13 @@ class ControlpanelController extends Controller{
                                         $cpRecordsData[$key + 1]['range_id'] = $range;
                                         $cpRecordsData[$key + 1]['tax'] = $tax;
                                         
-                                        $controlPanelId = $data['controlPanel']->id;   
+                                        //$controlPanelId = $data['controlPanel'][0]->id;
+                                        $controlPanelId = $data['controlPanel']->id;
+                                        //$starter = $data['controlPanel'][0]->startertypes['value'];
+                                        //$application = $data['controlPanel'][0]->applications['value'];
+                                        //$noOfPump = $data['controlPanel'][0]->noofpumps['value'];
+                                        //$power = $data['controlPanel'][0]->powers['value'];
+
                                         $starter = $data['startertypes'][0]['value'];
                                         $application = $data['applications'][0]['value'];
                                         $noOfPump = $cpNo_of_pump;
@@ -580,6 +700,7 @@ class ControlpanelController extends Controller{
                                                 ->render();
 
                                         $data['cp_records_html'] = $returnHTML;
+                                        //$data['cp_id'] = $data['controlPanel'][0]->id;
                                         $data['cp_id'] = $data['controlPanel']->id;
                                         $data['table_name'] = $tableName;
                                         $data['column_name'] = $columnName;
@@ -774,6 +895,9 @@ class ControlpanelController extends Controller{
             }
         }
 
+        // STEP 2: Effective Brand (Economic / Schneider / Lovato)
+        // $effectiveBrand = $this->getEffectiveBrand($brand, $component, $function, $range); // A Code: 01-06-2026 Comment
+
         // STEP 3: Special Logic
         $specialUnitPrice = $this->getSpecialUnitPrice(
             $brand, $function, $range, $enclosure, $component, $starter
@@ -784,6 +908,7 @@ class ControlpanelController extends Controller{
         }
 
         // STEP 4: Default
+        //$unitPrice = $this->getMasterSheetPriceData($effectiveBrand, $function, $range); // A Code: 01-06-2026 Comment
         $unitPrice = $this->getMasterSheetPriceData($brand, $function, $range); // A Code: 01-06-2026
 
         return $unitPrice * $qty;
@@ -806,7 +931,6 @@ class ControlpanelController extends Controller{
 
         return $brand;
     }
-
     // A Code: 02-06-2026 Start
     private function getEffectiveBrandAdders(int $brand, string $component, int $function, $range): int
     {
@@ -851,8 +975,7 @@ class ControlpanelController extends Controller{
     }
     // A Code: 17-04-2026 End
 
-    public function ajaxOptionalModal(Request $request) 
-    {
+    public function ajaxOptionalModal(Request $request) {
         $electricalLists = DB::table('main_electrical_list')->get();
         $electricalListsData = [];
         $rangeAndCode = $this->getControlPanelRangeAndCode($request);
@@ -908,7 +1031,8 @@ class ControlpanelController extends Controller{
         $ids = explode(",", $request->adder_ids);
 
         //Code ids
-        $component = self::getIdByValue('components', $request->component) ?? 0; // A Code: 30-06-2026
+        //$component = $request->component;
+        $component = DB::table('components')->where('value', $request->component)->value('id') ?? 0; // A Code: 17-04-2026
         $price = 0.00;
         $encloureArea = 0.00;
         if ($ids){
@@ -1038,7 +1162,15 @@ class ControlpanelController extends Controller{
                                             $val['brand_code'] = 2;
                                         }
                                     }
-                                 
+                                    // echo $val['function_code'];
+                                    // echo "<br>";
+                                    // if($request->enclosure == 4 && $val['brand_code'] == 5 && $val['function_code'] == 1)
+                                    // {
+                                    //     $val['brand_code'] = "5";
+                                    //     $val['function_code'] ="64";
+                                    // }
+                                    // echo $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$column] * $noOfPump * 1;
+                                    // echo "<br>";
                                     $price += $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$column] * $noOfPump * 1; // Column qty * no of pumps *  pump qty
                                     
                                     $encloureArea += $this->getMasterSheetHeightMultiplyByWidth($val['brand_code'], $val['function_code'], $val['range']) * $val[$column] * $noOfPump;
@@ -1050,12 +1182,13 @@ class ControlpanelController extends Controller{
                             }
                         }
                         break;
-                    default:
+                    default: //default
                         echo "within no code";
                         break;
                 }
             }
         }
+        //dd($price);
         $rangeAndCode = $this->getControlPanelRangeAndCode($request);
         if($rangeAndCode['starter_code'] == 'Xtreme'){
             return ['code_price' => $price, 'starter_code' => 'xtreme'];
@@ -1083,11 +1216,35 @@ class ControlpanelController extends Controller{
     }
     // A Code: 10-04-2026 End
 
+    // A Code: 10-04-2026 Start
+    // public function getControlPanelRangeAndCode($request)
+    // {
+    //     $returnRangeAndCode = [];
+    //     //$controlPanelData = ControlPanel::where('id', $request->cp_id)->get();
+    //     $controlPanelData = ControlPanelsMaster::where('id', $request->cp_id)->get();        
+    //     return $returnRangeAndCode = array(
+    //         'id' => $controlPanelData[0]->id,
+    //         'range' => $controlPanelData[0]->range,
+    //         'starter_code' => $controlPanelData[0]->starter_code,
+    //         'voltage_id' => $controlPanelData[0]->voltage_id,
+    //         'stater_type_id' => $controlPanelData[0]->stater_type_id
+    //     );
+    // }
+    // A Code: 10-04-2026 End
+
     // A Code: 23-04-2026 Start
     public function getControlPanelRangeAndCode($request)
-    {     
-        $voltageId = self::getIdByValue('voltages', $request->voltage);
-        $starterTypeId = self::getIdByValue('starter_types', $request->stater_type);       
+    {
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)
+                    ->where('value', $value)
+                    ->value('id')
+                : null;
+        };
+
+        $voltageId = $getIdByValue('voltages', $request->voltage);
+        $starterTypeId = $getIdByValue('starter_types', $request->stater_type);       
 
         $controlPanel = ControlPanelsMaster::find($request->cp_id);
 
@@ -1095,7 +1252,7 @@ class ControlpanelController extends Controller{
             return null;
         }        
 
-        $rangeId = self::getIdByValue('ranges', $controlPanel->range);
+        $rangeId = $getIdByValue('ranges', $controlPanel->range);
 
         return [
             'id'              => $controlPanel->id,
@@ -1195,20 +1352,20 @@ class ControlpanelController extends Controller{
                 
         // =========================
         // STEP 2: Resolve Values
-        // ========================= 
-        $noOfPump = self::getValue('number_of_pumps', $controlPanelCartData->no_of_pump_id);
-        $power = self::getValue('powers', $controlPanelCartData->power_id);
-        $voltage = self::getValue('voltages', $controlPanelCartData->voltage_id);
-        $application = self::getValue('applications', $controlPanelCartData->application_id);
+        // =========================
+        $noOfPump   = DB::table('number_of_pumps')->where('id', $controlPanelCartData->no_of_pump_id)->value('value');
+        $power      = DB::table('powers')->where('id', $controlPanelCartData->power_id)->value('value');
+        $voltage    = DB::table('voltages')->where('id', $controlPanelCartData->voltage_id)->value('value');
+        $application= DB::table('applications')->where('id', $controlPanelCartData->application_id)->value('value');
 
         // A Code: 22-06-2026 Start
-        $ambient_temp = self::getValue('ambient_temps', $controlPanelCartData->ambient_temp_id);
-        $starter_type = self::getValue('starter_types', $controlPanelCartData->stater_type_id);
-        $communication_protocol = self::getValue('comunication_protocols', $controlPanelCartData->communication_protocol_id);
-        $ip_rating = self::getValue('ip_ratings', $controlPanelCartData->ip_rating_id);
-        $component = self::getValue('components', $controlPanelCartData->components_id);
-        $enclosure = self::getValue('enclousres', $controlPanelCartData->enclosure_id);
-        $range = self::getValue('ranges', $controlPanelCartData->range);
+        $ambient_temp = DB::table('ambient_temps')->where('id', $controlPanelCartData->ambient_temp_id)->value('value');
+        $starter_type = DB::table('starter_types')->where('id', $controlPanelCartData->stater_type_id)->value('value'); 
+        $communication_protocol = DB::table('comunication_protocols')->where('id', $controlPanelCartData->communication_protocol_id)->value('value'); 
+        $ip_rating = DB::table('ip_ratings')->where('id', $controlPanelCartData->ip_rating_id)->value('value'); 
+        $component = DB::table('components')->where('id', $controlPanelCartData->components_id)->value('value'); 
+        $enclosure = DB::table('enclousres')->where('id', $controlPanelCartData->enclosure_id)->value('value');
+        $range = DB::table('ranges')->where('id', $controlPanelCartData->range)->value('value');     
         // A Code: 22-06-2026 End
 
         if (!$noOfPump || !$power || !$voltage || !$application) {
@@ -1224,7 +1381,25 @@ class ControlpanelController extends Controller{
         // =========================
         // STEP 3: Master Table
         // =========================
-        $power1 = number_format($power, 2, '.', ''); // A Code: 02-03-2026  
+        $power1 = number_format($power, 2, '.', ''); // A Code: 02-03-2026
+        // $controlPanelData = DB::table('control_panels_master')
+        //     //->where('id', $controlPanelCartData->control_panel_id) // A Code: 19-06-2026 Comment
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(no_of_pumps, ' ', ''))", [$noOfPump])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_rating, ' ', ''))", [$power1])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_supply, ' ', ''))", [$voltage])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(applications, ' ', ''))", [$application])
+
+        //     // A Code: 22-06-2026 Start
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(min_of_ambient_temp, ' ', ''))", [$ambient_temp])
+        //     ->where('starter_type', $starter_type)
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(communication_protocol, ' ', ''))", [$communication_protocol])
+        //     ->where('ip_rating', $ip_rating)
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(components, ' ', ''))", [$component])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(enclosure, ' ', ''))", [$enclosure])   
+        //     ->where('range', $range)
+        //     // A Code: 22-06-2026 End
+
+        //     ->first();    
             
         // A Code: 30-06-2026 Start
         $controlPanelData = DB::table('control_panels_master')
@@ -1305,8 +1480,11 @@ class ControlpanelController extends Controller{
         $codePrice = 0;
         $enclousreAdderItemData = null;
 
-        if (!empty($controlPanelCartData->adder_ids)) 
-        {
+        if (!empty($controlPanelCartData->adder_ids)) {
+
+            // if (!$controlPanelCartData->control_panel_id) {
+            //     $controlPanelCartData->control_panel_id = $controlPanelCartData->cp_id;
+            // }
             $controlPanelCartData->control_panel_id = $controlPanelData->id; // A Code: 23-06-2026
 
             $addersData = $this->calculateAddersSearchByArticle(
@@ -1317,6 +1495,7 @@ class ControlpanelController extends Controller{
                 $voltage,
                 $tableName,
                 $columnName,
+                //$controlPanelData->components,
                 $controlPanelCartData->components_id // A Code: 02-06-2026
             );
 
@@ -1331,6 +1510,9 @@ class ControlpanelController extends Controller{
 
         foreach ($cpRecords as $val) {
             $price += $this->searchByArticleCalculatePriceInItem(
+                //$controlPanelData->components,
+                //$controlPanelData->enclosure,
+                //$controlPanelData->starter_type,
                 $controlPanelCartData->components_id,
                 $controlPanelCartData->enclosure_id,
                 $controlPanelCartData->stater_type_id,
@@ -1349,7 +1531,8 @@ class ControlpanelController extends Controller{
         // STEP 8: Final Price
         // =========================
         // A Code: 10-04-2026 (Removed Overhead)
-        $price = ($price * ControlPanelsMaster::controlpanel_over_head()) / User::ic_margin_control_panel();        
+        $price = ($price * ControlPanelsMaster::controlpanel_over_head()) / User::ic_margin_control_panel();
+        
 
         // =========================
         // STEP 9: Generate HTML
@@ -1363,8 +1546,9 @@ class ControlpanelController extends Controller{
             ->with('application', $application)
             ->with('noOfPump', $noOfPump)
             ->with('power', $power)
+            //->with('starterCode', $controlPanelData->starter_code ?? null)
             ->with('starterCode', $controlPanelData->code ?? null)  // A Code: 02-03-2026
-            ->render();
+            ->render();       
 
         // =========================
         // STEP 10: Response
@@ -1418,17 +1602,17 @@ class ControlpanelController extends Controller{
         // =========================
         // STEP 2: Resolve Values
         // =========================
-        $noOfPump = self::getValue('number_of_pumps', $controlPanelCartData->no_of_pump_id);
-        $power = self::getValue('powers', $controlPanelCartData->power_id);
-        $voltage = self::getValue('voltages', $controlPanelCartData->voltage_id);
-        $application = self::getValue('applications', $controlPanelCartData->application_id);
-        $ambient_temp = self::getValue('ambient_temps', $controlPanelCartData->ambient_temp_id);
-        $starter_type = self::getValue('starter_types', $controlPanelCartData->stater_type_id);
-        $communication_protocol = self::getValue('comunication_protocols', $controlPanelCartData->communication_protocol_id);
-        $ip_rating = self::getValue('ip_ratings', $controlPanelCartData->ip_rating_id);
-        $component = self::getValue('components', $controlPanelCartData->components_id);
-        $enclosure = self::getValue('enclousres', $controlPanelCartData->enclosure_id);
-        $range = self::getValue('ranges', $controlPanelCartData->range);
+        $noOfPump   = DB::table('number_of_pumps')->where('id', $controlPanelCartData->no_of_pump_id)->value('value');
+        $power      = DB::table('powers')->where('id', $controlPanelCartData->power_id)->value('value');
+        $voltage    = DB::table('voltages')->where('id', $controlPanelCartData->voltage_id)->value('value');
+        $application= DB::table('applications')->where('id', $controlPanelCartData->application_id)->value('value');
+        $ambient_temp = DB::table('ambient_temps')->where('id', $controlPanelCartData->ambient_temp_id)->value('value');
+        $starter_type = DB::table('starter_types')->where('id', $controlPanelCartData->stater_type_id)->value('value'); 
+        $communication_protocol = DB::table('comunication_protocols')->where('id', $controlPanelCartData->communication_protocol_id)->value('value'); 
+        $ip_rating = DB::table('ip_ratings')->where('id', $controlPanelCartData->ip_rating_id)->value('value'); 
+        $component = DB::table('components')->where('id', $controlPanelCartData->components_id)->value('value'); 
+        $enclosure = DB::table('enclousres')->where('id', $controlPanelCartData->enclosure_id)->value('value');
+        $range = DB::table('ranges')->where('id', $controlPanelCartData->range)->value('value');     
 
         if (!$noOfPump || !$power || !$voltage || !$application) {
             return response()->json([
@@ -1444,6 +1628,19 @@ class ControlpanelController extends Controller{
         // STEP 3: Master Table
         // =========================
         $power1 = number_format($power, 2, '.', ''); // A Code: 02-03-2026
+        // $controlPanelData = DB::table('control_panels_master')
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(no_of_pumps, ' ', ''))", [$noOfPump])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_rating, ' ', ''))", [$power1])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_supply, ' ', ''))", [$voltage])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(applications, ' ', ''))", [$application])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(min_of_ambient_temp, ' ', ''))", [$ambient_temp])
+        //     ->where('starter_type', $starter_type)
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(communication_protocol, ' ', ''))", [$communication_protocol])
+        //     ->where('ip_rating', $ip_rating)
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(components, ' ', ''))", [$component])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(enclosure, ' ', ''))", [$enclosure])   
+        //     ->where('range', $range)
+        //     ->first(); 
 
         // A Code: 30-06-2026 Start
         $controlPanelData = DB::table('control_panels_master')
@@ -1603,6 +1800,7 @@ class ControlpanelController extends Controller{
             ->with('application', $application)
             ->with('noOfPump', $noOfPump)
             ->with('power', $power)
+            //->with('starterCode', $controlPanelData->starter_code ?? null)
             ->with('starterCode', $controlPanelData->code ?? null)  // A Code: 02-03-2026
             ->render();       
 
@@ -1655,6 +1853,7 @@ class ControlpanelController extends Controller{
             foreach ($ids as $id) {
                 switch ($id) {
                     case ($id >= 1 && $id <= 26): //electrical_common_adder code
+                        //id = $column
                         $electricalCommonAdders = DB::table('electrical_common_adder')->select('id', 'item_description', 'material_number', 'wilo_article_number', 'brand_code', 'function_code', 'range', $id)
                                         ->whereNotNull($id)->where($id, '!=', 0.00)->get();
                         
@@ -1671,6 +1870,7 @@ class ControlpanelController extends Controller{
                                         $val['brand_code'] = 2;
                                     }
                                 }
+                                // echo $val['brand_code'] . "<br>";
                                 $price += $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$id]; // Qty = $val[$id]
                                 $encloureArea += $this->getMasterSheetHeightMultiplyByWidth($val['brand_code'], $val['function_code'], $val['range']) * $val[$id];
                             }
@@ -1723,6 +1923,7 @@ class ControlpanelController extends Controller{
                                         $val['brand_code'] = 2;
                                     }
                                 }
+                                    //echo $val[$column] * $noOfPump;
                                     $price += $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$column] * $noOfPump;
                                     $encloureArea += $this->getMasterSheetHeightMultiplyByWidth($val['brand_code'], $val['function_code'], $val['range']) * $val[$column];
                             }
@@ -1733,6 +1934,7 @@ class ControlpanelController extends Controller{
                         $nearestColumn = $this->searchByArticleCommonAdderBasedOnAmpereNearestColumn($id, $motorPower, $voltage, $noOfPump);
                         if ($id >= 45 && $id <= 52) {
                             $column = $id . 'x' . $nearestColumn . 'ax1';
+                            //  echo $column ."</br>";
                         } else {
                             $column = $id . 'x' . $nearestColumn . 'ax2';
                         }
@@ -1764,7 +1966,7 @@ class ControlpanelController extends Controller{
                             }
                         }
                         break;
-                    default:
+                    default: //default
                     echo "within no code";
                     break;
                 }
@@ -1773,6 +1975,7 @@ class ControlpanelController extends Controller{
 
         $rangeAndCode = $this->serachByArticleNoGetControlPanelRangeAndCode($control_panel_id);
         if ($rangeAndCode['starter_code'] == 'Xtreme') {
+        //if ($starter_code == 'Xtreme'){ // A Code: 19-06-2026
             return ['code_price' => $price, 'starter_code' => 'xtreme'];
         } else {
             $enclousreItem = $this->getControlPanelItemEnclousreAreaFormula($table_name, $columnName, $encloureArea);
@@ -1831,6 +2034,7 @@ class ControlpanelController extends Controller{
 
         $starterMap = [
             1 => 'xtreme',
+            //2 => 'multi vfd + bypass',
         ];
 
         $enclosure = $enclosureMap[$enclousre] ?? '';
@@ -1899,6 +2103,9 @@ class ControlpanelController extends Controller{
             }
         }
 
+        // STEP 2: Effective Brand
+        // $effectiveBrand = $this->getEffectiveBrand($brand, $component, $function, $range); // A Code: 01-01-2026 Comment
+
         // STEP 3: Special Logic
         $specialUnitPrice = $this->getSpecialUnitPrice(
             $brand, $function, $range, $enclosure, $component, $starter
@@ -1909,6 +2116,7 @@ class ControlpanelController extends Controller{
         }
 
         // STEP 4: Default
+        //$unitPrice = $this->getMasterSheetPriceData($effectiveBrand, $function, $range); // A Code: 01-01-2026 Comment
         $unitPrice = $this->getMasterSheetPriceData($brand, $function, $range); // A Code: 01-01-2026
 
         return $unitPrice * $qty;
@@ -1933,22 +2141,6 @@ class ControlpanelController extends Controller{
             ->first();
     }
     // A Code: 22-04-2026 End
-
-    // A Code: 30-06-2026 Start
-    public static function getValue($table, $id)
-    {
-        return !empty($id)
-            ? DB::table($table)->where('id', $id)->value('value')
-            : null;
-    }
-
-    public static function getIdByValue($table, $value)
-    {
-        return !empty($value)
-            ? DB::table($table)->where('value', $value)->value('id')
-            : null;
-    }
-    // A Code: 30-06-2026 End
 
 
 }

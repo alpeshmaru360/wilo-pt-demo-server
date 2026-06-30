@@ -18,7 +18,9 @@ class CPBasicController extends Controller {
 
     use ControlPanelModelIdGet;
 
-    public function controlpanel_Basic(Request $request) {
+    public function controlpanel_Basic(Request $request) 
+    {
+        dd($request->all());
         set_time_limit(0);
         $filename = DB::table('control_panel_file_upload')
                         ->select('filename')

@@ -30,19 +30,12 @@ class ControlPanelsMaster extends Model
         'code',
     ];
 
-    // A Code: 16-06-2026 Start
-    /**
-     * Control Panel Master Details
-     */
-    // public function details()
+    // A Code: 26-06-2026 Start   
+    // public function rangeData()
     // {
-    //     return $this->hasMany(
-    //         ControlPanelsMasterDetail::class,
-    //         'control_panel_master_id',
-    //         'id'
-    //     );
+    //     return $this->belongsTo(\App\Range::class, 'range', 'value');
     // }
-    // A Code: 16-06-2026 End
+    // A Code: 26-06-2026 Start
 
     // A Code: 17-06-2026 Start
     public function getPowerRatingArrayAttribute()

@@ -807,7 +807,7 @@ class HomeController
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-       $data = Quotation::get_excel_file($quotation);
+        $data = Quotation::get_excel_file($quotation);       
 
         // Generate Excel file for download
         $filename = "quotation_{$selected_year}_{$selected_month}_" . time() . ".xlsx";

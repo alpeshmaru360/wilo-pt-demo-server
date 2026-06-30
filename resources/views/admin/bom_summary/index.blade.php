@@ -115,15 +115,47 @@
                                        
                                         <td>
                                         @php
-                                            $url = match($row['Module']) {
-                                                'controlpanel' => url('controlpanel/cart-item/' . $row['ItemWiseId']),
-                                                'scp' => url('scp/cart-item/' . $row['ItemWiseId']),
-                                                'scpv' => url('scpv/cart-item/' . $row['ItemWiseId']), // A Code: 23-02-2026
-                                                'atmos' => url('atmos/cart-item/' . $row['ItemWiseId']),
-                                                'booster' => url('booster-set/cart-item/' . $row['ItemWiseId']),
-                                                'firefighting' => url('firefighting-set/cart-item/' . $row['ItemWiseId']),
-                                                default => url('admin/dashboard'),
-                                            };
+
+                                            // $url = match($row['Module']) {
+                                            //     'controlpanel' => url('controlpanel/cart-item/' . $row['ItemWiseId']),
+                                            //     'scp' => url('scp/cart-item/' . $row['ItemWiseId']),
+                                            //     'scpv' => url('scpv/cart-item/' . $row['ItemWiseId']), // A Code: 23-02-2026
+                                            //     'atmos' => url('atmos/cart-item/' . $row['ItemWiseId']),
+                                            //     'booster' => url('booster-set/cart-item/' . $row['ItemWiseId']),
+                                            //     'firefighting' => url('firefighting-set/cart-item/' . $row['ItemWiseId']),
+                                            //     default => url('admin/dashboard'),
+                                            // };
+                                       
+                                            // A Code: 27-06-2026 Start
+                                            switch ($row['Module']) {
+                                                case 'controlpanel':
+                                                    $url = url('controlpanel/cart-item/' . $row['ItemWiseId']);
+                                                    break;
+
+                                                case 'scp':
+                                                    $url = url('scp/cart-item/' . $row['ItemWiseId']);
+                                                    break;
+
+                                                case 'scpv':
+                                                    $url = url('scpv/cart-item/' . $row['ItemWiseId']); // A Code: 23-02-2026
+                                                    break;
+
+                                                case 'atmos':
+                                                    $url = url('atmos/cart-item/' . $row['ItemWiseId']);
+                                                    break;
+
+                                                case 'booster':
+                                                    $url = url('booster-set/cart-item/' . $row['ItemWiseId']);
+                                                    break;
+
+                                                case 'firefighting':
+                                                    $url = url('firefighting-set/cart-item/' . $row['ItemWiseId']);
+                                                    break;
+
+                                                default:
+                                                    $url = url('admin/dashboard');
+                                            }
+                                            // A Code: 27-06-2026 End
                                         @endphp
                                         <a href="{{ $url }}" target = "_blank">{{ $row['article_no'] }}</a></td>
 

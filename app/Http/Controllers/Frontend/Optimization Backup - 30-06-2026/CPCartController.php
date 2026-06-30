@@ -24,7 +24,7 @@ use App\Helpers\CurrencyHelper;
 use App\Models\FireFighting\FireFightingCarts;
 
 class CPCartController extends Controller {
-    // control_panel_price_for_booster
+// control_panel_price_for_booster
     use ControlPanelModelIdGet;
 
     public function index($id){
@@ -55,26 +55,36 @@ class CPCartController extends Controller {
     // A Code: 03-04-2026 Start
     public function addToCart(Request $request) 
     {
-        // A Code: 07-03-2026 Start              
-
-        // A Code: 30-06-2026 Start
-        $numberOfPumpID = self::getIdByValue('number_of_pumps', $request->no_of_pump);
-        $powerID = self::getIdByValue('powers', $request->power_rating);
-        $voltageID = self::getIdByValue('voltages', $request->voltage);
-        $applicationID = self::getIdByValue('applications', $request->application);
-        $ambientTempID = self::getIdByValue('ambient_temps', $request->ambient_temp);
-        $staterTypeID = self::getIdByValue('starter_types', $request->stater_type);
-        $communicationProtocolID = self::getIdByValue('comunication_protocols', $request->communication_protocol);
-        $ipRatingID = self::getIdByValue('ip_ratings', $request->ip_rating);
-        $componentID = self::getIdByValue('components', $request->component);
-        $enclosureID = self::getIdByValue('enclousres', $request->enclosure);
-        // A Code: 30-06-2026 End
-        
+        // A Code: 07-03-2026 Start
+        $getIdByValue = function ($table, $value) {
+            return DB::table($table)
+                ->where('value', trim($value))
+                ->value('id');
+        };
+        $numberOfPumpID = $getIdByValue('number_of_pumps', $request->no_of_pump);
+        $powerID        = $getIdByValue('powers', $request->power_rating);
+        $voltageID      = $getIdByValue('voltages', $request->voltage);
+        $applicationID  = $getIdByValue('applications', $request->application);
+        $ambientTempID = $getIdByValue('ambient_temps', $request->ambient_temp);
+        $staterTypeID = $getIdByValue('starter_types', $request->stater_type);
+        $communicationProtocolID = $getIdByValue('comunication_protocols', $request->communication_protocol);
+        $ipRatingID = $getIdByValue('ip_ratings', $request->ip_rating);
+        $componentID = $getIdByValue('components', $request->component);
+        $enclosureID = $getIdByValue('enclousres', $request->enclosure);
         // A Code: 07-03-2026 End
 
-        if($request->adder_ids){        
+        if($request->adder_ids){
+            //$controlPanelCartData = ControlPanelCart::where('control_panel_id', $request->control_panel_id)
+            //         ->where('user_id', auth()->user()->id)
+            //         ->where('adder_ids', $request->adder_ids)
+            //         ->orderBy('id', 'desc')
+            //         ->first();
 
-            // A Code: 07-03-2026 Start            
+            // A Code: 07-03-2026 Start 
+            // $query = ControlPanelCart::where('control_panel_id', $request->cp_id)
+            //                         ->where('user_id', auth()->user()->id)
+            //                         ->where('adder_ids', $request->adder_ids)
+            //                         ->orderBy('id', 'desc');
 
             // A Code: 20-06-2026 Start 
             $query = ControlPanelCart::where('user_id', auth()->user()->id)
@@ -117,7 +127,12 @@ class CPCartController extends Controller {
             // A Code: 07-03-2026 End             
                        
 
-            if($controlPanelCartData == null){                     
+            if($controlPanelCartData == null){
+                //$controlPanelCartData1 = ControlPanelCart::where('control_panel_id', $request->control_panel_id)
+                // $controlPanelCartData1 = ControlPanelCart::where('control_panel_id', $request->cp_id)
+                //     ->where('adder_ids', $request->adder_ids)
+                //     ->orderBy('id', 'desc')
+                //     ->first();       
                     
                 // A Code: 20-06-2026 Start
                 $query = ControlPanelCart::where('adder_ids', $request->adder_ids)->orderBy('id', 'desc');
@@ -149,7 +164,21 @@ class CPCartController extends Controller {
             
                 $controlPanelCart = new ControlPanelCart;
                 if($controlPanelCartData1)
-                { 
+                {
+                    // A Code: 27-04-2026 Start (Commented code)
+                    // $request->no_of_pump = $controlPanelCartData1->no_of_pump_id;
+                    // $request->power_rating = $controlPanelCartData1->power_id;
+                    // $request->voltage = $controlPanelCartData1->voltage_id;
+                    // $request->application = $controlPanelCartData1->application_id;
+                    // $request->ambient_temp = $controlPanelCartData1->ambient_temp_id;
+                    // $request->stater_type = $controlPanelCartData1->stater_type_id;
+                    // $request->communication_protocol = $controlPanelCartData1->components_id;
+                    // $request->ip_rating = $controlPanelCartData1->ip_rating_id;
+                    // $request->component = $controlPanelCartData1->components_id;
+                    // $request->enclosure = $controlPanelCartData1->enclosure_id;   
+                    // A Code: 27-04-2026 End (Commented code)                 
+
+                    //$request->communication_protocol = $controlPanelCartData1->components_id;
                     $controlPanelCart->article_number = $controlPanelCartData1->article_number;
                     $controlPanelCart->full_article_number = $controlPanelCartData1->full_article_number ?? 0;
                     
@@ -174,6 +203,7 @@ class CPCartController extends Controller {
                     $full_article_number = $controlPanelCartData1->full_article_number ?? 0;
                     if($controlPanelCartData1)
                     {
+                        //$controlPanelCartData1 = ControlPanel::where('id', $controlPanelCartData1->cp_id)->first();                        
                         $controlPanelCartData1 = ControlPanelsMaster::where('id', $controlPanelCartData1->cp_id)->first(); 
                                         
                     }                    
@@ -214,9 +244,23 @@ class CPCartController extends Controller {
                     }
                     $controlPanelCart->full_article_number = $full_article_number;
                     $controlPanelCart->article_number = $article_number;
-                }                
+                }
 
+                // A Code: 13-04-2026 Start
+                // $query = ControlPanelCart::where('user_id', auth()->user()->id)
+                //                     ->where('adder_ids', $request->adder_ids)
+                //                     ->orderBy('id', 'desc');
+                // if (!empty($request->full_article_number)) {
+                //     $controlPanelCartData = $query->where('full_article_number', $request->full_article_number)->first();                
+                // }                 
+                // elseif (!empty($request->full_article_number_for_stock)) {
+                //     $controlPanelCartData = $query->where('full_article_number', $request->full_article_number_for_stock)->first();                
+                // } 
+                // A Code: 13-04-2026 End
+
+                //$controlPanelCart->control_panel_id = $request->control_panel_id;
                 $controlPanelCart->control_panel_id = $request->cp_id; // A Code: 20-06-2026
+                //$controlPanelCart->no_of_pump_id = $request->no_of_pump;
                 $controlPanelCart->no_of_pump_id = self::getIdByValue('number_of_pumps', $request['no_of_pump']) ?? 0; // A Code: 30-06-2026  
                 
                 // A Code: 27-04-2026 Start
@@ -231,8 +275,8 @@ class CPCartController extends Controller {
                 $controlPanelCart->enclosure_id = $enclosureID ?? 0;                 
                 // A Code: 27-04-2026 End
                 
-                $controlPanelRange = ControlPanelsMaster::where('id', $request->cp_id)->value('range');         
-                $controlPanelCart->range = self::getIdByValue('ranges', $controlPanelRange); // A Code: 30-06-2026 
+                //$controlPanelCart->range = $this->getIdByValue('App\Range', 'value', $request->range);
+                $controlPanelCart->range = self::getIdByValue('ranges', $controlPanelCartData1->range); // A Code: 30-06-2026  
                 $controlPanelCart->folder_name = '';
                 $controlPanelCart->file_name_under_folder = '';
                 $controlPanelCart->price = $request->total_price;
@@ -251,15 +295,19 @@ class CPCartController extends Controller {
                 {
                     $request->enclosure = @$controlPanelCartData1->enclosure_id;
                 }
+                //dd($controlPanelCart->id);
                 $controlPanelCart->save();
                 $cpId = $controlPanelCart->id;
                 
                 //below
+                //$data = $this->getControlPanelDataItemSave($request, $request->enclosure, $cpId, $request->control_panel_id);
                 $data = $this->getControlPanelDataItemSave($request, $request->enclosure, $cpId, $request->cp_id); // A Code: 20-06-2026
                 //dd($controlPanelCart,$data,$request->all(), $request->enclosure, $cpId, $request->cp_id);
                 //dd('case 1',$data); // with adder_ids options empty cart data condition result
                 $controlPanelUpdate = $controlPanelCart::find($cpId);
                 $controlPanelUpdate->starter_code = $data['starter_code'];
+                //$controlPanelUpdate->range = $data['range'];
+                //$controlPanelUpdate->range = $this->getIdByValue('App\Range', 'value', $data['range']); // A Code: 27-03-2026
                 $data_range = $data['range'] ??  null; // A Code: 30-06-2026 
                 $controlPanelUpdate->range = self::getIdByValue('ranges', $data_range); // A Code: 30-06-2026
                 $controlPanelUpdate->save();
@@ -277,22 +325,38 @@ class CPCartController extends Controller {
                     $cpId = $controlPanelCart->id;
                     if($request->enclosure == null)
                     {
-                        $request->enclosure = self::getValue('enclousres', $controlPanelCart->enclosure_id);  // A Code: 22-06-2026
+                        //$request->enclosure = $controlPanelCart->enclosure_id;
+                        $request->enclosure = DB::table('enclousres')
+                                                ->where('id', $controlPanelCart->enclosure_id)
+                                                ->value('value');  // A Code: 22-06-2026
                     }
+                    //dd($request->enclosure);
+                    //$data = $this->getControlPanelDataItemSave($request, $request->enclosure, $cpId, $request->control_panel_id);
                     $data = $this->getControlPanelDataItemSave($request, $request->enclosure, $cpId, $request->cp_id); // A Code: 20-06-2026
                     //dd('case 2',$data); // with adder_ids options not empty cart data condition result
                     $controlPanelUpdate = $controlPanelCart::find($cpId);
                     $controlPanelUpdate->price = $request->total_price;
                     $controlPanelUpdate->total_price = $request->total_price;
                     $controlPanelUpdate->starter_code = $data['starter_code'];
+                    //$controlPanelUpdate->range = $data['range'];
+                    //$controlPanelUpdate->range = $this->getIdByValue('App\Range', 'value', $data['range']); // A Code: 27-03-2026
                     $data_range = $data['range'] ??  null; // A Code: 30-06-2026 
                     $controlPanelUpdate->range = self::getIdByValue('ranges', $data_range); // A Code: 30-06-2026
                     $controlPanelUpdate->save();
                 }
             }
-        }else{       
+        }else{
+            //$controlPanelCartData = ControlPanelCart::where('control_panel_id', $request->control_panel_id)
+            //         ->where('user_id', auth()->user()->id)
+            //         ->whereNull('adder_ids')
+            //         ->orderBy('id', 'desc')
+            //         ->first();
 
-            // A Code: 07-03-2026 Start                
+            // A Code: 07-03-2026 Start     
+            // $query = ControlPanelCart::where('control_panel_id', $request->cp_id)
+            //                         ->where('user_id', auth()->user()->id)
+            //                         ->whereNull('adder_ids')
+            //                         ->orderBy('id', 'desc');
 
             // A Code: 20-06-2026 Start 
             $query = ControlPanelCart::where('user_id', auth()->user()->id)
@@ -335,6 +399,35 @@ class CPCartController extends Controller {
             // A Code: 07-03-2026 End            
             
             if($controlPanelCartData == null){
+                //$controlPanelCartData1 =ControlPanelCart::where('control_panel_id', $request->control_panel_id)
+                //         ->whereNull('adder_ids')
+                //         ->orderBy('id', 'desc')
+                //         ->first();
+
+                // A Code: 07-03-2026 Start
+                // if(!empty($request->no_of_pump)){
+                //     $controlPanelCartData1 = ControlPanelCart::where('control_panel_id', $request->cp_id)
+                //             ->where('no_of_pump_id', $numberOfPumpID)
+                //             ->where('power_id', $powerID)
+                //             ->where('voltage_id', $voltageID)
+                //             ->where('application_id', $applicationID)
+                //             ->where('ambient_temp_id', $ambientTempID)
+                //             ->where('stater_type_id', $staterTypeID)
+                //             ->where('communication_protocol_id', $communicationProtocolID)
+                //             ->where('ip_rating_id', $ipRatingID)
+                //             ->where('components_id', $componentID)
+                //             ->where('enclosure_id', $enclosureID)
+                //             ->where('user_id', auth()->user()->id)
+                //             ->whereNull('adder_ids')
+                //             ->orderBy('id', 'desc')
+                //             ->first();
+                // }else{
+                //     $controlPanelCartData1 = ControlPanelCart::where('control_panel_id', $request->cp_id)
+                //             ->whereNull('adder_ids')
+                //             ->orderBy('id', 'desc')
+                //             ->first();
+                // }            
+                // A Code: 07-03-2026 End  
                 
                 // A Code: 20-06-2026 Start
                 $query = ControlPanelCart::whereNull('adder_ids')->orderBy('id', 'desc');
@@ -392,11 +485,13 @@ class CPCartController extends Controller {
                 }
                 else{
                     
+                    //$controlPanelCartData1 = BoosterCart::where('cp_id', $request->control_panel_id)
                     $controlPanelCartData1 = BoosterCart::where('cp_id', $request->cp_id) // A Code: 20-06-2026
                                                             ->whereNull('adder_ids')
                                                             ->orderBy('id', 'desc')
                                                             ->first();
 
+                    //$booster_data = BoosterCart::where('cp_id', $request->control_panel_id) // A Code: 20-06-2026
                     $booster_data = BoosterCart::where('cp_id', $request->cp_id)
                                                 ->whereNull('adder_ids')
                                                 ->orderBy('id', 'desc')
@@ -404,6 +499,7 @@ class CPCartController extends Controller {
 
                     if($controlPanelCartData1)
                     {
+                        //$controlPanelCartData1 = ControlPanel::where('id', $controlPanelCartData1->cp_id)->first();
                         $controlPanelCartData1 = ControlPanelsMaster::where('id', $controlPanelCartData1->cp_id)->first(); 
                     }
                     if($controlPanelCartData1){
@@ -442,7 +538,21 @@ class CPCartController extends Controller {
                     }
                 }
 
-                $controlPanelCart->control_panel_id = $request->cp_id; // A Code: 20-06-2026            
+                //$controlPanelCart->control_panel_id = $request->control_panel_id;
+                $controlPanelCart->control_panel_id = $request->cp_id; // A Code: 20-06-2026
+                $controlPanelCart->no_of_pump_id = $request->no_of_pump;               
+
+                // A Code: 27-03-2026 Start
+                //$controlPanelCart->power_id = DB::table('powers')->where('value', $request->power_rating)->value('id') ?? 0;
+                //$controlPanelCart->voltage_id = DB::table('voltages')->where('value', $request->voltage)->value('id') ?? 0;                
+                // $controlPanelCart->application_id = DB::table('applications')->where('value', $request->application)->value('id') ?? 0;
+                // $controlPanelCart->ambient_temp_id = DB::table('ambient_temps')->where('value', $request->ambient_temp)->value('id') ?? 0;
+                // $controlPanelCart->stater_type_id = DB::table('starter_types')->where('value', $request->stater_type)->value('id') ?? 0;
+                // $controlPanelCart->communication_protocol_id = DB::table('comunication_protocols')->where('value', $request->communication_protocol)->value('id') ?? 0;
+                // $controlPanelCart->ip_rating_id = DB::table('ip_ratings')->where('value', $request->ip_rating)->value('id') ?? 0;
+                // $controlPanelCart->components_id = DB::table('components')->where('value', $request->component)->value('id') ?? 0;
+                // $controlPanelCart->enclosure_id = DB::table('enclousres')->where('value', $request->enclosure)->value('id') ?? 0;
+                // A Code: 27-03-2026 End  
 
                 // A Code: 30-06-2026 Start
                 $controlPanelCart->no_of_pump_id = self::getIdByValue('number_of_pumps', $request['no_of_pump']) ?? 0;
@@ -457,8 +567,8 @@ class CPCartController extends Controller {
                 $controlPanelCart->enclosure_id = self::getIdByValue('enclousres', $request['enclosure']) ?? 0;
                 // A Code: 30-06-2026 Start
                 
-                $controlPanelRange = ControlPanelsMaster::where('id', $request->cp_id)->value('range'); 
-                $controlPanelCart->range = self::getIdByValue('ranges', $controlPanelRange); // A Code: 30-06-2026 
+                //$controlPanelCart->range = $this->getIdByValue('App\Range', 'value', $request->range);
+                $controlPanelCart->range = self::getIdByValue('ranges', $controlPanelCartData1->range); // A Code: 30-06-2026                
                 $controlPanelCart->folder_name = '';
                 $controlPanelCart->file_name_under_folder = '';
                 $controlPanelCart->price = $request->total_price;
@@ -477,10 +587,13 @@ class CPCartController extends Controller {
                 {
                     $request->enclosure = $controlPanelCartData1->enclosure_id ?? null; // A Code: 19-06-2026
                 }
+                //$data = $this->getControlPanelDataItemSave($request,$request->enclosure, $cpId, $request->control_panel_id);
                 $data = $this->getControlPanelDataItemSave($request,$request->enclosure, $cpId, $request->cp_id); // A Code: 20-06-2026
                 //dd('case 3',$data); // without adder_ids options empty cart data condition result
                 $controlPanelUpdate = $controlPanelCart::find($cpId);
                 $controlPanelUpdate->starter_code = $data['starter_code'] ?? null; // A Code: 19-06-2026
+                //$controlPanelUpdate->range = $data['range'];                
+                //$controlPanelUpdate->range = $this->getIdByValue('App\Range', 'value', $data['range']); // A Code: 27-03-2026
                 $data_range = $data['range'] ??  null; // A Code: 30-06-2026 
                 $controlPanelUpdate->range = self::getIdByValue('ranges', $data_range); // A Code: 30-06-2026 
                 $controlPanelUpdate->save();
@@ -497,9 +610,14 @@ class CPCartController extends Controller {
                     
                     $cpId = $controlPanelCart->id;
                     if($request->enclosure == null)
-                    {                        
-                        $request->enclosure = self::getValue('enclousres', $controlPanelCart->enclosure_id);  // A Code: 22-06-2026
+                    {
+                        //$request->enclosure = $controlPanelCart->enclosure_id;
+                        $request->enclosure = DB::table('enclousres')
+                                                ->where('id', $controlPanelCart->enclosure_id)
+                                                ->value('value');  // A Code: 22-06-2026
+
                     }                    
+                    //$data = $this->getControlPanelDataItemSave($request,$request->enclosure, $cpId, $request->control_panel_id);
                     $data = $this->getControlPanelDataItemSave($request,$request->enclosure, $cpId, $request->cp_id); // A Code: 20-06-2026
                     //dd('case 4',$data); // without adder_ids options not empty cart data condition result
                     
@@ -507,8 +625,10 @@ class CPCartController extends Controller {
                     $controlPanelUpdate->price = $request->total_price;
                     $controlPanelUpdate->total_price = $request->total_price;
                     $controlPanelUpdate->starter_code = $data['starter_code'] ?? null;
+                    //$controlPanelUpdate->range = $data['range'];
                     $data_range = $data['range'] ??  null; // A Code: 22-06-2026
-                    $controlPanelUpdate->range = self::getIdByValue('ranges', $data_range); // A Code: 30-06-2026    
+                    //$controlPanelUpdate->range = $this->getIdByValue('App\Range', 'value', $data_range); // A Code: 27-03-2026  
+                    $controlPanelUpdate->range = self::getIdByValue('ranges', $data_range); // A Code: 30-06-2026                  
                     $controlPanelUpdate->save();
                 }
             }
@@ -525,30 +645,38 @@ class CPCartController extends Controller {
 
         if (!$controlPanelCartData) {
             return;
-        }    
-       
-        $request->enclosure = $request->enclosure ?: self::getValue('enclousres', $controlPanelCartData->enclosure_id);
-        $request->component = $request->component ?: self::getValue('components', $controlPanelCartData->components_id);
-        $request->stater_type = $request->stater_type ?: self::getValue('starter_types', $controlPanelCartData->stater_type_id);
+        }
+    
+        $request->enclosure = $request->enclosure ?: DB::table('enclousres')
+            ->where('id', $controlPanelCartData->enclosure_id)
+            ->value('value');        
+
+        $request->component = $request->component ?: DB::table('components')
+            ->where('id', $controlPanelCartData->components_id)
+            ->value('value');
+
+        $request->stater_type = $request->stater_type ?: DB::table('starter_types')
+            ->where('id', $controlPanelCartData->stater_type_id)
+            ->value('value');
     
         // 2. Get control panel data (from cart to ensure consistency)
         $controlPanelData = ControlPanelsMaster::find($controlPanelCartData->control_panel_id);
 
         if (!$controlPanelData) {
             return;
-        }    
+        }      
 
         $numberOfPump = !empty($request->no_of_pump)
-            ? trim((string) $request->no_of_pump)
-            : trim((string) self::getValue('number_of_pumps', $controlPanelCartData->no_of_pump_id));        
+            ? trim((string)$request->no_of_pump)
+            : trim((string) DB::table('number_of_pumps')->where('id', $controlPanelCartData->no_of_pump_id)->value('value'));
 
         $power = !empty($request->power_rating)
-            ? trim((string) $request->power_rating)
-            : trim((string) self::getValue('powers', $controlPanelCartData->power_id));        
+            ? trim((string)$request->power_rating)
+            : trim((string) DB::table('powers')->where('id', $controlPanelCartData->power_id)->value('value'));
 
         $voltage = !empty($request->voltage)
-            ? trim((string) $request->voltage)
-            : trim((string) self::getValue('voltages', $controlPanelCartData->voltage_id));
+            ? trim((string)$request->voltage)
+            : trim((string) DB::table('voltages')->where('id', $controlPanelCartData->voltage_id)->value('value'));
 
         // Trim values
         $numberOfPump = trim($numberOfPump);
@@ -764,7 +892,11 @@ class CPCartController extends Controller {
     // A Code: 10-04-2026 Optimized
     public function calculatePriceInItem($val, $request, $enclosure, $columnName, $cpId, $enclousreAdderItemData, $i, $enclosure_count)
     {
-        // A Code: 17-04-2026 Start
+        //dd($val, $request->all(), $enclosure, $columnName, $cpId, $enclousreAdderItemData, $i, $enclosure_count);
+        // A Code: 17-04-2026 Start    
+        $getValue = function ($table, $id) {
+            return (string) (DB::table($table)->where('id', $id)->value('value') ?? '');
+        };
 
         if (!empty($request->full_article_number)) {
 
@@ -772,19 +904,16 @@ class CPCartController extends Controller {
                 ->where('full_article_number', $request->full_article_number)
                 ->first();
 
-            if ($controlPanelCartData) {      
-                
-                // A Code: 30-06-2026 Start
-                $request->power_rating = self::getValue('powers', $controlPanelCartData->power_id);
-                $request->voltage = self::getValue('voltages', $controlPanelCartData->voltage_id);
-                $request->application = self::getValue('applications', $controlPanelCartData->application_id);
-                $request->ambient_temp = self::getValue('ambient_temps', $controlPanelCartData->ambient_temp_id);
-                $request->stater_type = self::getValue('starter_types', $controlPanelCartData->stater_type_id);
-                $request->communication_protocol = self::getValue('comunication_protocols', $controlPanelCartData->communication_protocol_id);
-                $request->ip_rating = self::getValue('ip_ratings', $controlPanelCartData->ip_rating_id);
-                $request->component = self::getValue('components', $controlPanelCartData->components_id);
-                $request->enclosure = self::getValue('enclousres', $controlPanelCartData->enclosure_id);
-                // A Code: 30-06-2026 End
+            if ($controlPanelCartData) {                 
+                $request->power_rating = $getValue('powers', $controlPanelCartData->power_id);
+                $request->voltage = $getValue('voltages', $controlPanelCartData->voltage_id);
+                $request->application = $getValue('applications', $controlPanelCartData->application_id);
+                $request->ambient_temp = $getValue('ambient_temps', $controlPanelCartData->ambient_temp_id);
+                $request->stater_type = $getValue('starter_types', $controlPanelCartData->stater_type_id);
+                $request->communication_protocol = $getValue('comunication_protocols', $controlPanelCartData->communication_protocol_id);
+                $request->ip_rating = $getValue('ip_ratings', $controlPanelCartData->ip_rating_id);
+                $request->component = $getValue('components', $controlPanelCartData->components_id);
+                $request->enclosure = $getValue('enclousres', $controlPanelCartData->enclosure_id);
             }
         }
         // A Code: 17-04-2026 End 
@@ -807,7 +936,11 @@ class CPCartController extends Controller {
 
         $brand    = (int)$val['brand_code'];
         $function = (int)$val['function_code'];
-        $range    = $val['range'];   
+        $range    = $val['range']; 
+
+        // if($range == 862 || $range == 662){
+        //     dd($controlPanelCartData->components_id,$request->component);
+        // }
 
         // Component Logic (Economic / Schneider / Lovato)
         $brand = $this->getEffectiveBrand($brand, $component, $function, $range); // A Code: 01-06-2026
@@ -891,10 +1024,12 @@ class CPCartController extends Controller {
         }
 
         // Default Case
+        // $unitPrice = $this->getMasterSheetPriceData($effectiveBrand, $function, $range); // A Code: 01-06-2026 Comment
         $unitPrice = $this->getMasterSheetPriceData($brand, $function, $range); // A Code: 01-06-2026
         $price     = $unitPrice * $qty;
 
         //dd("case 6",$val, $brand, $function, $range, $columnName, $cpId, $price, $unitPrice);
+        // $this->itemSave($val, $effectiveBrand, $function, $range, $columnName, $cpId, $price, $unitPrice); // A Code: 01-06-2026 Comment
         $this->itemSave($val, $brand, $function, $range, $columnName, $cpId, $price, $unitPrice); // A Code: 01-06-2026
 
         return $price; // case 6
@@ -934,6 +1069,7 @@ class CPCartController extends Controller {
 
         // Metal + Multi VFD + Bypass OR Metal + Xtreme
         if ($enclosure === 'metal' && $brand === 8) {
+            //if (in_array($starter, ['multi vfd + bypass', 'xtreme'])) {
             if (in_array($starter, ['xtreme'])) {
                 return $this->getMasterSheetPriceData(32, $function, $range) ?: null;
             }
@@ -964,8 +1100,11 @@ class CPCartController extends Controller {
                                 // Component Logic (Economic / Schneider / Lovato)
                                 $val['brand_code'] = $this->getEffectiveBrand($val['brand_code'], $request->component, $val['function_code'], $val['range']); // A Code: 02-06-2026
                                                                 
+                                //if ($request->component == 2 && $val['brand_code'] == "1"){
                                 if (($request->component == 2 || $request->component == 'Economic') && $val['brand_code'] == "1") 
-                                {                                   
+                                {
+                                    //$val['brand_code'] = "2";
+                                    //echo $exist;
                                     $exist = $this->getMasterSheetPriceData(2, $val['function_code'], $val['range']);
                                     if($exist)
                                     {
@@ -975,7 +1114,11 @@ class CPCartController extends Controller {
                                 $price = $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$id]; // Qty = $val[$id]
                                 $unitPrice = $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']);
                                 $encloureArea += $this->getMasterSheetHeightMultiplyByWidth($val['brand_code'], $val['function_code'], $val['range']) * $val[$id];
-                               
+                                
+                                // if ($this->isDuplicate($processed, $val['brand_code'], $val['function_code'], $val['range'])) {
+                                //     continue;
+                                // }
+                                
                                 $this->itemSave($val, $val['brand_code'], $val['function_code'], $val['range'], $val[$id], $cpId, $price, $unitPrice, $id);
                             }
                         }
@@ -993,6 +1136,7 @@ class CPCartController extends Controller {
                                 // Component Logic (Economic / Schneider / Lovato)
                                 $val['brand_code'] = $this->getEffectiveBrand($val['brand_code'], $request->component, $val['function_code'], $val['range']); // A Code: 02-06-2026
 
+                                //if ($request->component == 2 && $val['brand_code'] == "1"){
                                 if (($request->component == 2 || $request->component == 'Economic') && $val['brand_code'] == "1") 
                                 {
                                     $exist = $this->getMasterSheetPriceData(2, $val['function_code'], $val['range']);
@@ -1020,6 +1164,7 @@ class CPCartController extends Controller {
                                 // Component Logic (Economic / Schneider / Lovato)
                                 $val['brand_code'] = $this->getEffectiveBrand($val['brand_code'], $request->component, $val['function_code'], $val['range']); // A Code: 02-06-2026
 
+                                //if ($request->component == 2 && $val['brand_code'] == "1"){
                                 if (($request->component == 2 || $request->component == 'Economic') && $val['brand_code'] == "1") 
                                 {
                                     $exist = $this->getMasterSheetPriceData(2, $val['function_code'], $val['range']);
@@ -1083,12 +1228,13 @@ class CPCartController extends Controller {
                         }
                         break;                 
                     
-                        default:
+                        default: //default
                         echo "within no code";
                         break;
                 }
             }
         }
+        //exit();
         return $price;
     }
 
@@ -1105,8 +1251,31 @@ class CPCartController extends Controller {
     // A Code: 16-04-2026 End
 
     // A Code: 10-04-2026 Start
-    public function getControlPanelRangeAndCode($request)
+    public function getControlPanelRangeAndCode($request) {
+        $returnRangeAndCode = [];
+        //$controlPanelData = ControlPanel::where('id', $request->cp_id)->get();
+        $controlPanelData = ControlPanelsMaster::where('id', $request->cp_id)->get();       
+
+        return $returnRangeAndCode = array(
+            'id' => $controlPanelData[0]->id,
+            'range' => $controlPanelData[0]->range,
+            'starter_code' => $controlPanelData[0]->starter_code
+        );
+    }
+
+    public function getControlPanelRangeAndCode1($request)
     {
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)
+                    ->where('value', $value)
+                    ->value('id')
+                : null;
+        };
+
+        $voltageId = $getIdByValue('voltages', $request->voltage);
+        $starterTypeId = $getIdByValue('starter_types', $request->stater_type);
+
         $controlPanel = ControlPanelsMaster::find($request->cp_id);
 
         if (!$controlPanel) {
@@ -1117,6 +1286,8 @@ class CPCartController extends Controller {
             'id'              => $controlPanel->id,
             'range'           => $controlPanel->range,
             'starter_code'    => $controlPanel->code,
+            'voltage_id'      => $voltageId,
+            'stater_type_id'  => $starterTypeId,
         ];
     }
     // A Code: 10-04-2026 End
@@ -1254,6 +1425,7 @@ class CPCartController extends Controller {
     public function cartItems($cartId, $returnDataOnly = false) {
         $items = Item::where('cp_cart_id', $cartId)->with('contolPanelCart')->orderBy('adder_code')->get();
                       
+        //$full_article_number_for_stock = ControlPanelCart::where('id', $cartId)->value('full_article_number_for_stock');
         $stock_check = ControlPanelCart::where('id', $cartId)->value('stock_check');
 
         if($returnDataOnly){
@@ -1403,7 +1575,7 @@ class CPCartController extends Controller {
             : null;
     }
 
-    public static function getIdByValue($table, $value)
+    private static function getIdByValue($table, $value)
     {
         return !empty($value)
             ? DB::table($table)->where('value', $value)->value('id')

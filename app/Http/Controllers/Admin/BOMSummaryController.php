@@ -419,17 +419,19 @@ class BOMSummaryController extends Controller
 
                 if($quotation->cart_model_name == 'booster'){
 
-                    $cart = $quotation->boosterCart;
+                    //$cart = $quotation->boosterCart;
+                    $cart = optional($quotation->boosterCart); // A Code: 27-06-2026
 
-                    $articleNo   = $cart?->full_article_number ?? null;
-                    $description = $cart?->model_no ?? null;
-                    $qty         = $cart?->qty ?? 0;
-                    $unitPrice   = $cart?->price ?? 0;
-                    $totalPrice  = $cart?->total_price ?? 0;
-                    $interMargin = $cart?->inter_company_margin ?? 0;
-                    $overhead    = $cart?->booster_overhead ?? 0;
+                    $articleNo   = $cart->full_article_number ?? null;
+                    $description = $cart->model_no ?? null;
+                    $qty         = $cart->qty ?? 0;
+                    $unitPrice   = $cart->price ?? 0;
+                    $totalPrice  = $cart->total_price ?? 0;
+                    $interMargin = $cart->inter_company_margin ?? 0;
+                    $overhead    = $cart->booster_overhead ?? 0;
 
-                    $cart_id = $quotation->boosterCart->id ?? '-'; 
+                    //$cart_id = $quotation->boosterCart->id ?? '-'; 
+                    $cart_id = $cart->id ?? '-'; // A Code: 27-06-2026
 
                     $boosterSetController = new BoosterSetController();
                     $cartData = $boosterSetController->cartItems($cart_id, true);
@@ -443,17 +445,18 @@ class BOMSummaryController extends Controller
 
                 }else if($quotation->cart_model_name == 'atmos'){
 
-                    $cart = $quotation->atmosCart;
+                    //$cart = $quotation->atmosCart;
+                    $cart = optional($quotation->atmosCart); // A Code: 27-06-2026
 
-                    $articleNo   = $cart?->full_article_number ?? null;
-                    $description = $cart?->pump_name ?? null;
-                    $qty         = $cart?->qty ?? 0;
-                    $unitPrice   = $cart?->price ?? 0;
-                    $totalPrice  = $cart?->total_price ?? 0;
-                    $interMargin = $cart?->inter_company_margin_price ?? 0;
-                    $overhead    = $cart?->overhead_price ?? 0;
+                    $articleNo   = $cart->full_article_number ?? null;
+                    $description = $cart->pump_name ?? null;
+                    $qty         = $cart->qty ?? 0;
+                    $unitPrice   = $cart->price ?? 0;
+                    $totalPrice  = $cart->total_price ?? 0;
+                    $interMargin = $cart->inter_company_margin_price ?? 0;
+                    $overhead    = $cart->overhead_price ?? 0;
 
-                    $cart_id = $cart?->id ?? '-'; 
+                    $cart_id = $cart->id ?? '-'; 
 
                     $atmosGigaController = new AtmosGigaController();
                     $cartData = $atmosGigaController->cartItems($cart_id, true);
@@ -473,15 +476,16 @@ class BOMSummaryController extends Controller
                 }
                 else if($quotation->cart_model_name == 'scp'){
 
-                    $cart = $quotation->scpCart;
+                    //$cart = $quotation->scpCart;
+                    $cart = optional($quotation->scpCart); // A Code: 27-06-2026
 
-                    $articleNo   = $cart?->full_article_number ?? null;
-                    $description = $cart?->pump_name ?? null;
-                    $qty         = $cart?->qty ?? 0;
-                    $unitPrice   = $cart?->price ?? 0;
-                    $totalPrice  = $cart?->total_price ?? 0;
-                    $interMargin = $cart?->inter_company_margin_price ?? 0;
-                    $overhead    = $cart?->overhead_price ?? 0;
+                    $articleNo   = $cart->full_article_number ?? null;
+                    $description = $cart->pump_name ?? null;
+                    $qty         = $cart->qty ?? 0;
+                    $unitPrice   = $cart->price ?? 0;
+                    $totalPrice  = $cart->total_price ?? 0;
+                    $interMargin = $cart->inter_company_margin_price ?? 0;
+                    $overhead    = $cart->overhead_price ?? 0;
 
                     $bomLabourCostAndCharges += ($quotation->scpCart->assembly_charge ?? 0) +
                                             ($quotation->scpCart->painting_charge ?? 0) +
@@ -491,15 +495,16 @@ class BOMSummaryController extends Controller
                 // A Code: 23-02-2026 Start
                 else if($quotation->cart_model_name == 'scpv'){
 
-                    $cart = $quotation->scpvCart;
+                    //$cart = $quotation->scpvCart;
+                    $cart = optional($quotation->scpvCart); // A Code: 27-06-2026
 
-                    $articleNo   = $cart?->full_article_number ?? null;
-                    $description = $cart?->pump_name ?? null;
-                    $qty         = $cart?->qty ?? 0;
-                    $unitPrice   = $cart?->price ?? 0;
-                    $totalPrice  = $cart?->total_price ?? 0;
-                    $interMargin = $cart?->inter_company_margin_price ?? 0;
-                    $overhead    = $cart?->overhead_price ?? 0;
+                    $articleNo   = $cart->full_article_number ?? null;
+                    $description = $cart->pump_name ?? null;
+                    $qty         = $cart->qty ?? 0;
+                    $unitPrice   = $cart->price ?? 0;
+                    $totalPrice  = $cart->total_price ?? 0;
+                    $interMargin = $cart->inter_company_margin_price ?? 0;
+                    $overhead    = $cart->overhead_price ?? 0;
 
                     $bomLabourCostAndCharges += ($quotation->scpvCart->assembly_charge ?? 0) +
                                             ($quotation->scpvCart->painting_charge ?? 0) +
@@ -509,17 +514,19 @@ class BOMSummaryController extends Controller
                 // A Code: 23-02-2026 End              
                 else if($quotation->cart_model_name == 'controlpanel'){  
 
-                    $cart = $quotation->controlPanelCart;
+                    //$cart = $quotation->controlPanelCart;
+                    $cart = optional($quotation->controlPanelCart); // A Code: 27-06-2026
 
-                    $articleNo   = $cart?->full_article_number ?? null;
-                    $description = $cart?->article_number ?? null;
-                    $qty         = $cart?->qty ?? 0;
-                    $unitPrice   = $cart?->price ?? 0;
-                    $totalPrice  = $cart?->total_price ?? 0;
-                    $interMargin = $cart?->intercompany_margin ?? 0;
-                    $overhead    = $cart?->overhead ?? 0;
+                    $articleNo   = $cart->full_article_number ?? null;
+                    $description = $cart->article_number ?? null;
+                    $qty         = $cart->qty ?? 0;
+                    $unitPrice   = $cart->price ?? 0;
+                    $totalPrice  = $cart->total_price ?? 0;
+                    $interMargin = $cart->intercompany_margin ?? 0;
+                    $overhead    = $cart->overhead ?? 0;
 
-                    $cart_id = $quotation->controlPanelCart->id ?? '-'; 
+                    //$cart_id = $quotation->controlPanelCart->id ?? '-'; 
+                    $cart_id = $cart->id ?? '-'; // A Code: 27-06-2026
 
                     $controlPanelController = new CPCartController();
                     $cartData = $controlPanelController->cartItems($cart_id, true);
@@ -535,17 +542,19 @@ class BOMSummaryController extends Controller
 
                 }else if($quotation->cart_model_name == 'firefighting'){
                     
-                    $cart = $quotation->firefightingCart;
+                    //$cart = $quotation->firefightingCart;
+                    $cart = optional($quotation->firefightingCart); // A Code: 27-06-2026
 
-                    $articleNo   = $cart?->full_article_number ?? null;
-                    $description = $cart?->pump_models ?? null;
-                    $qty         = $cart?->qty ?? 0;
-                    $unitPrice   = $cart?->price ?? 0;
-                    $totalPrice  = $cart?->total_price ?? 0;
-                    $interMargin = $cart?->inter_company_margin_price ?? 0;
-                    $overhead    = $cart?->overhead_price ?? 0;
+                    $articleNo   = $cart->full_article_number ?? null;
+                    $description = $cart->pump_models ?? null;
+                    $qty         = $cart->qty ?? 0;
+                    $unitPrice   = $cart->price ?? 0;
+                    $totalPrice  = $cart->total_price ?? 0;
+                    $interMargin = $cart->inter_company_margin_price ?? 0;
+                    $overhead    = $cart->overhead_price ?? 0;
 
-                    $cart_id = $quotation->firefightingCart->id ?? '-'; 
+                    //$cart_id = $quotation->firefightingCart->id ?? '-'; 
+                    $cart_id = $cart->id ?? '-'; // A Code: 27-06-2026
                 }
 
                 $mfcPerUnit = $unitPrice * $interMargin;

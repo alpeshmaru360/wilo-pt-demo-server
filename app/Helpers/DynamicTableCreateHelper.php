@@ -7,8 +7,8 @@ use Illuminate\Database\Schema\Blueprint;
 
 Class DynamicTableCreateHelper {
 
-    public static function createDynamic($table_name, $columns) {
-
+    public static function createDynamic($table_name, $columns) 
+    {
         $fields = [];
         $columnBreak = [];
         $addNewColumnBreak = [];
@@ -66,14 +66,14 @@ Class DynamicTableCreateHelper {
                 }
             }
         }
-//        dd($columnBreak);
-//        echo "<pre>".print_r($fields,1);
-//        die;
+        // dd($columnBreak);
+        // echo "<pre>".print_r($fields,1);
+        // die;
         return DynamicTableCreateHelper::createTable($table_name, $fields, $columnBreak, $addNewColumnBreak);
     }
     
-     public static function createOnlyMasterSheetDynamic($table_name, $columns) {
-
+    public static function createOnlyMasterSheetDynamic($table_name, $columns) 
+    {
         $fields = [];
 
         foreach ($columns as $key => $column) {
@@ -103,8 +103,9 @@ Class DynamicTableCreateHelper {
         }
         return DynamicTableCreateHelper::createNormalTable($table_name, $fields);
     }
-    public static function createMasterSheetDynamic($table_name, $columns) {
-
+    
+    public static function createMasterSheetDynamic($table_name, $columns) 
+    {
         $fields = [];
 
         foreach ($columns as $key => $column) {
@@ -135,16 +136,16 @@ Class DynamicTableCreateHelper {
         return DynamicTableCreateHelper::createNormalTable($table_name, $fields);
     }
 
-    public static function createTable($table_name, $fields = [], $columnBreak = [], $addNewColumnBreak = []) {
+    public static function createTable($table_name, $fields = [], $columnBreak = [], $addNewColumnBreak = []) 
+    {
         // check if table is not already exists
-//        dd($fields);
+        // dd($fields);
         if (Schema::hasTable($table_name)) {
             Schema::dropIfExists($table_name);
         }
-
-
+        
         Schema::create($table_name, function (Blueprint $table) use ($fields, $table_name) {
-//            $table->increments('id');
+            // $table->increments('id');
             if (count($fields) > 0) {
                 foreach ($fields as $field) {
                     $table->{$field['type']}($field['name']);
@@ -159,9 +160,9 @@ Class DynamicTableCreateHelper {
 
             if (in_array(trim($val['name']), $addNewColumnBreak, true)) {
 
-//                echo "sdfds";
-//                echo $val['name'];
-//                unset($fields[$key]);
+                // echo "sdfds";
+                // echo $val['name'];
+                // unset($fields[$key]);
             } else {
                 $newColumnFields[] = $fields[$key];
             }
@@ -171,21 +172,21 @@ Class DynamicTableCreateHelper {
             $parentColumn[$val] = $addNewColumnBreak[$key];
         }
 
-//        dd($parentColumn);
-//        die;
+        // dd($parentColumn);
+        // die;
 
         return array($newColumnFields, $columnBreak, $parentColumn);
     }
 
-    public static function createNormalTable($table_name, $fields = []) {
+    public static function createNormalTable($table_name, $fields = []) 
+    {
         // check if table is not already exists
         if (Schema::hasTable($table_name)) {
             Schema::dropIfExists($table_name);
         }
 
-
         Schema::create($table_name, function (Blueprint $table) use ($fields, $table_name) {
-//            $table->increments('id');
+            // $table->increments('id');
             if (count($fields) > 0) {
                 foreach ($fields as $field) {
                     $table->{$field['type']}($field['name']);

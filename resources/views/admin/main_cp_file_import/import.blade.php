@@ -15,7 +15,7 @@
             @csrf
             <div class="form-group {{ $errors->has('price') ? 'has-error' : '' }}">
                 <label for="file_import">File Upload</label>
-                <input type="file" id="file_import" name="file_import" class="form-control">
+                <input type="file" id="file_import" name="file_import" class="form-control h-100">
                 @if($errors->has('file-import'))
                 <em class="invalid-feedback">
                     {{ $errors->first('file-import') }}
@@ -31,9 +31,9 @@
         </form>
     </div>
 
-    <div class="row">
+    <!-- <div class="row">
         <a class="btn btn-primary" href="{{URL::to('getCpbasic')}}"/>Click this button file import into database</a>
-    </div>
+    </div> -->
 </div>
 
 @endsection

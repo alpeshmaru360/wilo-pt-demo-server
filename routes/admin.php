@@ -82,6 +82,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     Route::get('file-import', 'FileImportController@import');
     Route::get('ajax-fileName', 'FileImportController@ajaxFileName');
+    Route::get('ajax-rangeName', 'FileImportController@ajaxRangeName'); // A Code: 26-06-2026
     Route::post('upload', 'FileImportController@upload')->name('upload');
 
     // Profile

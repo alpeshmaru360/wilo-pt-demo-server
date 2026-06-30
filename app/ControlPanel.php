@@ -40,9 +40,11 @@ class ControlPanel extends Model {
         return $this->belongsTo('App\Component', 'components_id', 'id');
     }
 
-    public function ranges() {
-        return $this->belongsTo('App\Range', 'range', 'id');
-    }
+    // A Code: 26-06-2026 Start Comment
+    // public function ranges() {
+    //     return $this->belongsTo('App\Range', 'range', 'id');
+    // }
+    // A Code: 26-06-2026 End Comment
 
     public function enclousres() {
         return $this->belongsTo('App\Enclousre', 'enclosure_id', 'id');

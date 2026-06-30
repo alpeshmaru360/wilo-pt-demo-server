@@ -7,6 +7,7 @@ use DB;
 use App\Customer;
 use App\ControlPanelCart;
 use App\ControlPanel;
+use App\Models\ControlPanelsMaster; // A Code: 27-06-2026
 use App\Helpers\Helper;
 use App\Quotation;
 use App\Item;
@@ -110,10 +111,41 @@ class Quotation extends Model
                 $data['components'] = '-';
                 $data['Enclosure'] = '-';
             } elseif ($value->cart_model_name == 'booster') {
+
+                // A Code: 27-06-2026 Start
+                $bcart = BoosterCart::with('cpDetails')->find($value->cp_cart_id);              
+                $cpDetails = optional(optional($bcart)->cpDetails);
+                $bcpId = $value->BCpId;
+
+                // if old control panel id then check in old control panel otherwise new control panel
+                $starter_type = $cpDetails->stater_type ?? static::cp_stater_type_id($bcpId);
+                $no_of_pump = $cpDetails->no_of_pump ?? static::cp_no_of_pump($bcpId);
+                $cp_ambient_temps = $cpDetails->ambient_temp ?? static::cp_ambient_temps($bcpId);
+                $communication_protocol = $cpDetails->communication_protocol ?? static::cp_communication_protocol($bcpId);
+                $ip_rating = $cpDetails->ip_rating ?? static::cp_ip_rating($bcpId);
+                $component = $cpDetails->component ?? static::cp_component($bcpId);
+                $enclosure = $cpDetails->enclosure ?? static::cp_enclosure($bcpId);
+
+                if(!empty($cpDetails)){
+                    $table_name = static::cpmaster_table_name($bcpId); // New
+                }else{
+                    $table_name = static::cp_table_name($bcpId); // Old
+                }
+                // A Code: 27-06-2026 End
+
+                // $starter_type = static::cp_stater_type_id($value->BCpId);
+                // $no_of_pump = static::cp_no_of_pump($value->BCpId);                
+                // $cp_ambient_temps = static::cp_ambient_temps($value->BCpId);
+                // $communication_protocol = static::cp_communication_protocol($value->BCpId);
+                // $ip_rating = static::cp_ip_rating($value->BCpId);
+                // $component = static::cp_component($value->BCpId);
+                // $enclosure = static::cp_enclosure($value->BCpId);
+                // $table_name = static::cp_table_name($value->BCpId);
+
                 $data['simple_article_no'] = $value->BArticleNumber;
-                $starter_type = static::cp_stater_type_id($value->BCpId);
-                $no_of_pump = static::cp_no_of_pump($value->BCpId);
-                $table_name = static::cp_table_name($value->BCpId);
+                //$starter_type = static::cp_stater_type_id($value->BCpId);
+                //$no_of_pump = static::cp_no_of_pump($value->BCpId);
+                //$table_name = static::cp_table_name($value->BCpId);
                 $data['article_no'] = $value->BFullArticleNumber;
                 if ($starter_type == '-' || $no_of_pump == '-' || $table_name == '-') {
                     $data['description'] = '';
@@ -208,17 +240,17 @@ class Quotation extends Model
                     $data['Pump price'] = $value->BPumpPrice;
                 }
                 $data['pump_article_number'] = $value->BBoosterArticleNumber;
-                $cp_ambient_temps = static::cp_ambient_temps($value->BCpId);
+                //$cp_ambient_temps = static::cp_ambient_temps($value->BCpId);
                 $data['ambient_temp'] = $cp_ambient_temps;
-                $starter_type = static::cp_stater_type_id($value->BCpId);
+                //$starter_type = static::cp_stater_type_id($value->BCpId);
                 $data['starter_type'] = $starter_type;
-                $communication_protocol = static::cp_communication_protocol($value->BCpId);
+                //$communication_protocol = static::cp_communication_protocol($value->BCpId);
                 $data['commication_protocal'] = $communication_protocol;
-                $ip_rating = static::cp_ip_rating($value->BCpId);
+                //$ip_rating = static::cp_ip_rating($value->BCpId);
                 $data['ip_rating'] = $ip_rating;
-                $component = static::cp_component($value->BCpId);
+                //$component = static::cp_component($value->BCpId);
                 $data['components'] = $component;
-                $enclosure = static::cp_enclosure($value->BCpId);
+                //$enclosure = static::cp_enclosure($value->BCpId);
                 $data['Enclosure'] = $enclosure;
             } elseif ($value->cart_model_name == 'controlpanel') {
                 $data['simple_article_no'] = $value->CArticleNumber;
@@ -601,6 +633,23 @@ class Quotation extends Model
         }
         return $table_name;
     }
+
+    // A Code: 27-06-2026 Start
+    public static function cpmaster_table_name($cp_id)
+    {
+        $table_name = ControlPanelsMaster::select('table_name')->where('id', '=', $cp_id)->first();
+        if ($table_name) {
+            if (str_starts_with($table_name->table_name, "basic_") == true) {
+                $table_name = "COE";
+            } else {
+                $table_name = "CO";
+            }
+        } else {
+            $table_name = "-";
+        }
+        return $table_name;
+    }
+    // A Code: 27-06-2026 End
 
     public static function cp_no_of_pump($cp_id)
     {
