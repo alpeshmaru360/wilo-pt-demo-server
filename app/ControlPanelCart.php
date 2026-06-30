@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ControlPanelCart extends Model {
 
-     public function items() {
+    public function items() {
         return $this->hasMany('App\Item', 'cp_cart_id', 'id');
     }
 

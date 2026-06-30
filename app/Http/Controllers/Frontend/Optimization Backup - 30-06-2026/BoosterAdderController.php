@@ -32,8 +32,10 @@ class BoosterAdderController extends Controller {
     public function ajaxOptionalModal(Request $request) 
     {        
         $electricalLists = DB::table('main_electrical_list')->get();
+        // dd($electricalLists);
         $electricalListsData = [];
         $rangeAndCode = $this->getControlPanelRangeAndCode($request);
+        //dd($rangeAndCode);
         foreach ($electricalLists as $electricalList) {
             if (($electricalList->code >= 1 && $electricalList->code <= 13 && $rangeAndCode['starter_code'] != 'Xtreme' ) 
                 || ($electricalList->code >= 16 && $electricalList->code <= 18 && $rangeAndCode['starter_code'] != 'Xtreme') 
@@ -84,11 +86,34 @@ class BoosterAdderController extends Controller {
         return response()->json(array('success' => true, 'data' => $data));
     }
 
-    // A Code: 30-06-2026 Start
+    // public function getControlPanelRangeAndCode($request) 
+    // {
+    //     $returnRangeAndCode = [];
+    //     $controlPanelData = ControlPanel::where('id', $request->cp_id)->get();
+    //     // dd($controlPanelData);
+
+    //     return $returnRangeAndCode = array(
+    //         'id' => $controlPanelData[0]->id,
+    //         'range' => $controlPanelData[0]->range,
+    //         'starter_code' => $controlPanelData[0]->starter_code,
+    //         'voltage_id' => $controlPanelData[0]->voltage_id,
+    //         'stater_type_id' => $controlPanelData[0]->stater_type_id
+    //     );
+    // }
+
+    // A Code: 29-06-2026 Start
     public function getControlPanelRangeAndCode($request) 
-    {     
-        $voltageId = self::getIdByValue('voltages', $request->voltage);
-        $starterTypeId = self::getIdByValue('starter_types', $request->stater_type);
+    {
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)
+                    ->where('value', $value)
+                    ->value('id')
+                : null;
+        };
+
+        $voltageId = $getIdByValue('voltages', $request->voltage);
+        $starterTypeId = $getIdByValue('starter_types', $request->stater_type); 
 
         $controlPanel = ControlPanelsMaster::find($request->cp_id);
 
@@ -96,7 +121,7 @@ class BoosterAdderController extends Controller {
             return null;
         } 
 
-        $rangeId = self::getIdByValue('ranges', $controlPanel->range);
+        $rangeId = $getIdByValue('ranges', $controlPanel->range);
 
         return [
             'id'              => $controlPanel->id,
@@ -106,13 +131,7 @@ class BoosterAdderController extends Controller {
             'stater_type_id'  => $starterTypeId,
         ];        
     }
-    public static function getIdByValue($table, $value)
-    {
-        return !empty($value)
-            ? DB::table($table)->where('value', $value)->value('id')
-            : null;
-    }
-    // A Code: 30-06-2026 End
+    // A Code: 29-06-2026 End
 
 
 

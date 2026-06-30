@@ -60,10 +60,10 @@
                                         --}}                                       
                                         <!-- A Code: 22-06-2026 Start -->
                                         <td>
-                                            {{ optional($boosterCartData->boosterCpData[0] ?? null)->no_of_pumps }}
+                                            {{ optional($boosterCartData->cpDetails ?? null)->no_of_pump }}
                                         </td>                                     
                                         @if (auth()->user()->isAdmin())
-                                            <td>{{$boosterCartData->pump_price * optional($boosterCartData->boosterCpData[0] ?? null)->no_of_pumps}}</td>
+                                            <td>{{$boosterCartData->pump_price * optional($boosterCartData->cpDetails ?? null)->no_of_pump}}</td>
                                         @endif
                                         <!-- A Code: 22-06-2026 End -->
                                     </tr>

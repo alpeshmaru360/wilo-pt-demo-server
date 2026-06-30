@@ -16,6 +16,7 @@ use App\Helpers\DynamicTableCreateHelper;
 use DB;
 use Session;
 use App\ControlPanel;
+use App\Models\ControlPanelsMaster; // A Code: 26-06-2026
 
 class FileImportController extends Controller {
 
@@ -75,38 +76,67 @@ class FileImportController extends Controller {
         return response(null, 204);
     }
 
-    public function import(Request $request) {
-//        dd('dd');
+    // A Code: 26-06-2026 Start
+    public function import(Request $request) 
+    {  
         $ranges = Range::all();
-        $folderNames = ControlPanel::select('folder_name', 'file_name_under_folder')
-                        ->groupBy('folder_name')->get();
+        // $folderNames = ControlPanel::select('folder_name', 'file_name_under_folder')
+        //                             ->groupBy('folder_name')
+        //                             ->get();
 
+        $folderNames = ControlPanelsMaster::select('folders_name', 'file_name_comes_under_this_folder')
+                                    ->groupBy('folders_name')
+                                    ->get();
 
-//        dd($folderName);
         return view('admin.file-import.import', compact('ranges', 'folderNames'));
-    }
+    }    
+
+    // public function ajaxRangeName(Request $request) 
+    // {
+    //     $rangeName = Range::find($request->rangeId)->value;
+    //     $foldersnames = ControlPanelsMaster::select('range', 'folders_name')
+    //                                 ->where('range', $rangeName)
+    //                                 ->groupBy('folders_name')
+    //                                 ->get();
+
+    //     return response()->json(array('foldersnames' => $foldersnames), 200);
+    // }
 
     public function ajaxFileName(Request $request) {
-//        dd('dd');
-        $filenames = ControlPanel::select('folder_name', 'file_name_under_folder')
-                        ->where('folder_name', $request->folderName)
-                        ->groupBy('file_name_under_folder')->get();
+        // $filenames = ControlPanel::select('folder_name', 'file_name_under_folder')
+        //                             ->where('folder_name', $request->folderName)
+        //                             ->groupBy('file_name_under_folder')
+        //                             ->get();
+        
+        $filenames = ControlPanelsMaster::select('folders_name', 'file_name_comes_under_this_folder')
+                                    ->where('folders_name', $request->folderName)
+                                    ->groupBy('file_name_comes_under_this_folder')
+                                    ->get();        
 
         return response()->json(array('filenames' => $filenames), 200);
     }
+    // A Code: 26-06-2026 End
 
-    public function upload(Request $request) {
+    public function upload(Request $request) 
+    {
         set_time_limit(0);
-        $rangeName = Range::find($request->range)->value;
+        $rangeName = Range::find($request->range)->value;        
         $folderName = $request->folder_name;
         $fileName = $request->file_name;
       
-        $tableName = ControlPanel::select('table_name')
-                        ->where('folder_name', $folderName)
-                        ->where('file_name_under_folder',$fileName)
-                        ->groupBy('file_name_under_folder')
-                ->first()->table_name;
-//        dd($tableName);
+        // $tableName = ControlPanel::select('table_name')
+        //                             ->where('folder_name', $folderName)
+        //                             ->where('file_name_under_folder', $fileName)
+        //                             ->groupBy('file_name_under_folder')
+        //                             ->first()->table_name;
+
+        // A Code: 26-06-2026 Start
+        $tableName = ControlPanelsMaster::where('folders_name', $folderName)
+                                    ->where('file_name_comes_under_this_folder', $fileName)
+                                    ->value('table_name');
+        // A Code: 26-06-2026 End
+
+        dd($tableName);
         $file = $request->file_import;
         if (!empty($file)) {
             $path = '/app/public/' . $rangeName;
@@ -121,7 +151,7 @@ class FileImportController extends Controller {
             $data = new \SpreadsheetReader($filePath . $file_excel);
 
             echo $tableName;
-//            die;
+            // die;
             foreach ($data as $key => $d) {
 
                 if ($key < 1) { //Only first row 
@@ -133,13 +163,14 @@ class FileImportController extends Controller {
                     unset($createTableField[0]); //Remove Id column
                     unset($d[0]); // Remove S.No Rows
                 } else if ($key > 0 && is_array($createTableField)) {
-//                 echo "<pre>" . print_r($createTableField, 1);
+
+                    // echo "<pre>" . print_r($createTableField, 1);
                     $insertData = [];
                     for ($column = 1; $column <= count($createTableField); $column ++) {
 
                         $insertData[$createTableField[$column]['name']] = isset($d[$column]) ? $d[$column] : 0; // $d[$column] = $row  
                     }
-//                    echo "<pre>" . print_r($insertData, 1);
+                    // echo "<pre>" . print_r($insertData, 1);
                     DB::table($tableName)->insert(
                             array($insertData)
                     );
@@ -164,7 +195,6 @@ class FileImportController extends Controller {
         Session::flash('message', "Success! Your file has been imported ");
         return redirect()->back();
 
-//        redirect()->back()
     }
 
     public function make_directory($path) {
@@ -177,8 +207,8 @@ class FileImportController extends Controller {
         if (!empty($file)) {
 
             $fileName = $file->getClientOriginalName();
-            //$extension = \File::extension($file);
-//             $fileName = rand(11111111, 99999999) . '.' . $extension;
+            // $extension = \File::extension($file);
+            // $fileName = rand(11111111, 99999999) . '.' . $extension;
 
             if ($file->move($path, $fileName)) {
                 $is_uploaded = $fileName;

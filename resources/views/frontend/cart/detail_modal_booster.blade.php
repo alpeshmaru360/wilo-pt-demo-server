@@ -99,7 +99,7 @@
                 @endif
 
                 @if($row['code'] == "65" || $row['code'] == "66" || $row['code'] == "67")
-                    ["{{$row['item_description']}}"]
+                    ["{{$row['item_description'] ?? null}}"]
                 @endif
               </td>
             </tr>

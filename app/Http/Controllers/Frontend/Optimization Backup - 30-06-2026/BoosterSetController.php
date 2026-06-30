@@ -110,7 +110,15 @@ class BoosterSetController extends Controller {
 
     //here mechanical price avaliable
     public function calculateMechanicalComponent(Request $request) 
-    {      
+    {
+        // A Code: 29-06-2026 Start
+        $getValue = function ($table, $id) {
+            return !empty($id)
+                ? DB::table($table)->where('id', $id)->value('value')
+                : null;
+        };
+        // A Code: 29-06-2026 End
+
         $article_number = \request()->get('article_number');
         $pump_model = \request()->get('pump_model');
         $no_of_pumps = (int)\request()->get('no_of_pumps');
@@ -118,7 +126,9 @@ class BoosterSetController extends Controller {
         $panel_height = (float)\request()->get('panel_height');
         $panel_width = (float)\request()->get('panel_width');
         $system_pressure = \request()->get('system_pressure');
-        $manifold = \request()->get('manifold');       
+        $manifold = \request()->get('manifold');
+        
+        // $cp_price = (float)\request()->get('cp_price');
         
         $cp_price_raw = \request()->get('cp_price');
         $cp_price = (float)str_replace(',', '', $cp_price_raw);
@@ -131,6 +141,7 @@ class BoosterSetController extends Controller {
         $range = \request()->get('range');
         $motor_power = (float)\request()->get('power');
         $voltage = (float)\request()->get('voltage');
+
 
         $validator = Validator::make(\request()->all(), [
                     'pump_model' => 'required',
@@ -173,9 +184,12 @@ class BoosterSetController extends Controller {
 
         $slashPos = strpos($pump_model, ' ');
         $fpump_model = explode(' ', $pump_model);
+        // print_r( $fpump_model);
         $model = end($fpump_model);
         if (str_starts_with($model, 'C')) {
-            $model = str_replace('.', '', $model);        
+            $model = str_replace('.', '', $model);
+        
+            // $model =  str_replace('-','.',$model);
         }
         else {
             if (str_contains($model, '/')) {
@@ -224,6 +238,7 @@ class BoosterSetController extends Controller {
         foreach ($ptp_data as $key => $p) {
             $start = (int) substr(trim($p->pump_model_range1), $offset);
             $end = (int) substr(trim($p->pump_model_range2), $offset);
+         //   echo $start.' '.$end.' '.$check.'<br>';
             if ($check >= $start && $check <= $end) {
                 $ptp = $p->ptp;
                 $ptd_distance_id = $p->id;
@@ -253,6 +268,7 @@ class BoosterSetController extends Controller {
             foreach ($base_frame_length_data as $key => $p) {
                 $start = (int) substr(trim($p->pump_model_range1), $offset);
                 $end = (int) substr(trim($p->pump_model_range2), $offset);
+                // echo $start.' '.$end.' '.$check.'<br>';
                 if ($check >= $start && $check <= $end) {
                     $base_frame_length = $p;
                     break;
@@ -312,13 +328,14 @@ class BoosterSetController extends Controller {
             $base_frame_length_data = BaseFrameCalculation::where('no_of_pumps', $no_of_pumps)->where('ptp', $ptp)
             ->get();
             $no_of_pumps = (int)\request()->get('no_of_pumps');
-                // ->where(function($query) use ($model){
+            // ->where(function($query) use ($model){
                 //     $query->where('pump_model_range1', 'LIKE', '%' . trim(substr($model, 0, -1)) . '%');
                 //     $query->orWhere('pump_model_range2', 'LIKE', '%' . trim(substr($model, 0, -1)) . '%');
                 // })
             foreach ($base_frame_length_data as $key => $p) {
                 $start = (int) substr(trim($p->pump_model_range1), $offset);
                 $end = (int) substr(trim($p->pump_model_range2), $offset);
+                // echo $start.' '.$end.' '.$check.'<br>';
                 if ($check >= $start && $check <= $end) {
                     $base_frame_length = $p;
                     break;
@@ -361,6 +378,7 @@ class BoosterSetController extends Controller {
             foreach ($baseframe_panel_data as $key => $p) {
                 $start = (int) substr(trim($p->pump_model_range1), $offset);
                 $end = (int) substr(trim($p->pump_model_range2), $offset);
+            //   echo $start.' '.$end.' '.$check.'<br>';
                 if ($check >= $start && $check <= $end) {
                     $base_frame_length = $p;
                     break;
@@ -395,6 +413,7 @@ class BoosterSetController extends Controller {
             }
             // $panel_stand_price = array_sum($master_sheet);
         } else {
+            // print_r('$panel_stand_price');
             $data['error_html'] = 'No  Panel Height record found for panel height '.$panel_height;
             return response()->json(array('success' => true, 'data' => $data));
         }
@@ -413,9 +432,8 @@ class BoosterSetController extends Controller {
         }
 
         // A Code: 15-06-2026 Start
-        $range = self::getIdByValue('ranges', trim($range));
-        $starter_type = self::getIdByValue('starter_types', trim($starter_type));
-
+        $range = DB::table('ranges')->where('value', trim($range))->value('id');
+        $starter_type = DB::table('starter_types')->where('value', trim($starter_type))->value('id');
         // A Code: 15-06-2026 Start
 
         //calculate power monitor flag
@@ -575,7 +593,7 @@ class BoosterSetController extends Controller {
         $data['pump_unit_price'] = $pump_unit_price;
         $data['panel_stand_price'] = $panel_stand_price;
         $data['no_of_pumps'] = $no_of_pumps;
-        $starter_type = self::getValue('starter_types', $starter_type); // A Code: 30-06-2026
+        $starter_type = $getValue('starter_types', $starter_type); // A Code: 29-06-2026
         $data['starter_type'] = $starter_type;
         $data['power'] = $motor_power;
         $data['code_price'] = $code_price;
@@ -720,11 +738,31 @@ class BoosterSetController extends Controller {
         return response()->json(array('success' => true, 'data' => $data));
     }
 
+    // public function getControlPanelRangeAndCode($request) {
+    //     $returnRangeAndCode = [];
+    //     $controlPanelData = ControlPanel::where('id', $request->cp_id)->get();
+    //     return $returnRangeAndCode = array(
+    //         'id' => $controlPanelData[0]->id,
+    //         'range' => $controlPanelData[0]->range,
+    //         'starter_code' => $controlPanelData[0]->starter_code,
+    //         'voltage_id' => $controlPanelData[0]->voltage_id,
+    //         'stater_type_id' => $controlPanelData[0]->stater_type_id
+    //     );
+    // }
+
     // A Code: 25-06-2026 Start
     public function getControlPanelRangeAndCode($request) 
-    {       
-        $voltageId = self::getIdByValue('voltages', $request->voltage);  
-        $starterTypeId = self::getIdByValue('starter_types', $request->stater_type); 
+    {
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)
+                    ->where('value', $value)
+                    ->value('id')
+                : null;
+        };
+
+        $voltageId = $getIdByValue('voltages', $request->voltage);
+        $starterTypeId = $getIdByValue('starter_types', $request->stater_type); 
 
         $controlPanel = ControlPanelsMaster::find($request->cp_id);        
 
@@ -732,7 +770,7 @@ class BoosterSetController extends Controller {
             return null;
         } 
 
-        $rangeId = self::getIdByValue('ranges', $controlPanel->range);
+        $rangeId = $getIdByValue('ranges', $controlPanel->range);
 
         return [
             'id'              => $controlPanel->id,
@@ -761,6 +799,7 @@ class BoosterSetController extends Controller {
             foreach ($codes as $code) {
                 switch ($code) {
                     case ($code >= 53 && $code <= 57): //electrical_common_adder code
+                        //id = $column
                         $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
                                         ->whereNotNull($code)->where($code, '!=', 0)->first();
                         $arrayResult = json_decode(json_encode($cpRecords), true);
@@ -806,8 +845,11 @@ class BoosterSetController extends Controller {
 
                         $desc = "Flexible connector" . " " . $variable;
                         $get_vals = DB::table('mechanical_adder_common_flexible')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
+                        // dd($get_vals);
 
                         $price += $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
+                        // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+                        //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
                         break;
 
                     case ($code == 64):  //electrical_common_adder_based_on_ampere code
@@ -817,6 +859,8 @@ class BoosterSetController extends Controller {
 
                         $get_vals = DB::table('mechanical_adder_common_flexible')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
                         $price += $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
+                        // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+                        //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
                         break;
                     case ($code == 65):  //electrical_common_adder_based_on_ampere code
                         if ($request->code65 && !empty($request->code65)) {
@@ -849,15 +893,17 @@ class BoosterSetController extends Controller {
                                     ->where('id', $request->code67)
                                     ->first();
                             
-                            $arrayResult = json_decode(json_encode($cpRecords), true);
-                            $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+                            //if($cpRecords){ 
+                                $arrayResult = json_decode(json_encode($cpRecords), true);
+                                $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+                            //}
                         }
                         break;
 
                     case ($code == 68 ):  //electrical_common_adder_based_on_ampere code
                         $price += DB::table('setup_fields')->where('name', 'booster_adder_code_no_68')->pluck('value')[0];
                         break;
-                    default:
+                    default: //default
                     break;
                 }
             }
@@ -940,9 +986,447 @@ class BoosterSetController extends Controller {
                 $last = explode(" ", $first_break);
         return end($last);
     }
+
+    // Original Code Start
+    /*
+    public function addToCart(Request $request) {
+		$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
+			if(auth()->user()->country_id == 6){
+            $BoosterCartData = $BoosterCartData->orWhere('ksa_full_article_number','=',$request->full_article_number);
+        }
+			$BoosterCartData = $BoosterCartData->latest('id')->first();
+        if(!empty($request->full_article_number) && $request->full_article_number != null)
+        {
+            $mechanical_article_number = $BoosterCartData->mechanical_article_number;
+            $electrical_article_number = $BoosterCartData->electrical_article_number;
+            $article_number = $BoosterCartData->article_number;
+            $cp_id = DB::table('control_panels')->where('id','=',$BoosterCartData->cp_id)->first();
+            $request->no_of_pump = $cp_id->no_of_pump_id;
+            $request->pump_type = $BoosterCartData->pump_type;
+            $request->booster_article_number = $BoosterCartData->booster_article_number;
+            $request->article_number = $BoosterCartData->booster_article_number;
+            $request->pump_model = $BoosterCartData->model_no;
+            $request->power = $BoosterCartData->motor_power;
+            $request->voltage = $BoosterCartData->supply_voltage;
+            $request->manifold = $BoosterCartData->manifold;
+            $request->system_pressure = $BoosterCartData->system_pressure;
+            // $request->pump_unit_price =  $BoosterCartData->pump_price;
+            $request->pump_unit_price = $this->getPumpDetailByType($BoosterCartData);
+
+            if($request->pump_unit_price == null){
+                $request->pump_unit_price = $BoosterCartData->pump_price;
+            }
+            $request->cp_id =  $BoosterCartData->cp_id;
+            $request->adder_ids = $BoosterCartData->adder_ids;
+            $request->mechanical_adder_ids = $BoosterCartData->mechanical_adder_ids;
+        }
+        $interCompanyMargin = User::ic_margin_booster(); // This is temporary
+        $shippingPercentage = 10 / 100; //This percentage can be editable by admin
+        $overHead = DB::table('setup_fields')->where('name', 'booster_overhead')->pluck('value')[0]; //get from admin; //This $overHead can be editable by admin
+        $base_frame_size_constant = DB::table('setup_fields')->where('name', 'base_frame_size')->pluck('value')[0]; //get from admin; //This $overHead can be editable by admin
+        $cable_size_ampere_constant = DB::table('setup_fields')->where('name', 'cable_size_ampere_constant')->pluck('value')[0]; //get from admin; //This $overHead can be editable by admin
+        $cable_length_constant = DB::table('setup_fields')->where('name', 'cable_length_constant')->pluck('value')[0]; //get from admin; //This $overHead can be editable by admin
+        $spare_length = DB::table('setup_fields')->where('name', 'spare_length')->pluck('value')[0]; //get from admin; //This $overHead can be editable by admin
+
+        $bill_of_mechanical = json_decode($request->mechanicalcomponent_billofmaterial, true);
+        $adderIds = '';
+        $mechanicalAdderIds = '';
+        if(empty($request->full_article_number) && $request->full_article_number == null)
+        {
+            if ($request->adder_ids) {
+                $adderIds = implode(",", $request->adder_ids);
+            }
+            if ($request->mechanical_adder_ids) {
+                $mechanicalAdderIds = implode(",", $request->mechanical_adder_ids);
+            }
+        }
+        else{
+            if ($request->adder_ids) {
+                $adderIds = $request->adder_ids;
+            }
+            if ($request->mechanical_adder_ids) {
+                $mechanicalAdderIds = $request->mechanical_adder_ids;
+            } 
+        }
+
+        if($request->adder_ids || $request->mechanical_adder_ids){
+            $boosterCartData = BoosterCart::where('pump_type', $request->pump_type)
+                    ->where('model_no', $request->pump_model)
+                    ->where('motor_power', $request->power)
+                    ->where('supply_voltage', $request->voltage)
+                    ->where('manifold', $request->manifold)
+                    ->where('system_pressure', $request->system_pressure)
+                    ->where('pump_price', $request->pump_unit_price)
+                    ->where('cp_id', $request->cp_id)
+                    ->where('adder_ids', $adderIds)
+                    ->where('mechanical_adder_ids', $mechanicalAdderIds)
+                    ->where('user_id', auth()->user()->id)
+                    ->orderBy('id', 'desc');
+
+            if($request->pump_type == "manually"){
+                $boosterCartData = $boosterCartData->where('pump_price',$request->pump_unit_price);
+            }
+
+            $boosterCartData = $boosterCartData->first();
+            if($boosterCartData == null || $request->qoutation_value != null){
+                $boosterCart = new BoosterCart;
+
+                $boosterCartData1 =  BoosterCart::where('pump_type', $request->pump_type)
+                    ->where('model_no', $request->pump_model)
+                    ->where('motor_power', $request->power)
+                    ->where('supply_voltage', $request->voltage)
+                    ->where('manifold', $request->manifold)
+                    ->where('system_pressure', $request->system_pressure)
+                    //->where('pump_price', $request->pump_unit_price)
+                    ->where('cp_id', $request->cp_id)
+                    ->where('adder_ids', $adderIds)
+                    ->where('mechanical_adder_ids', $mechanicalAdderIds)
+                    //->where('user_id', auth()->user()->id)
+                    ->orderBy('id', 'desc');
+
+                    if($request->pump_type == "manually"){
+                        $boosterCartData1 = $boosterCartData1->where('pump_price',$request->pump_unit_price);
+                    }
+
+                    $boosterCartData1 = $boosterCartData1->first();
+					$new_ksa_article_number = '';
+                if(auth()->user()->country_id == 6){
+                    if($boosterCartData1){
+					if($boosterCartData1->full_article_number != "" || $boosterCartData1->full_article_number != null){
+                            if($request->country == "ksa"){
+                                $new_ksa_article_number = str_replace("683", "339", $boosterCartData1->full_article_number);
+								$boosterCart->ksa_full_article_number = $new_ksa_article_number;
+                            }
+                        }
+					}
+                }
+
+                    //this if condition is for manual calculation...!!!
+
+                    if($boosterCartData1 && empty($request->full_article_number) && $request->full_article_number == null)
+                    {
+                        $boosterCart->full_article_number = $boosterCartData1->full_article_number;
+                        $boosterCart->article_number = $boosterCartData1->article_number;
+                        $boosterCart->mechanical_article_number = $boosterCartData1->mechanical_article_number;
+                        $boosterCart->electrical_article_number = $boosterCartData1->electrical_article_number;
+                    }
+                    //this if condition is for search calculation...!!!
+
+                    if(!empty($request->full_article_number) && $request->full_article_number != null)
+                    {
+                        // $boosterCart->full_article_number = $request->full_article_number;
+                        $boosterCart->full_article_number = $boosterCartData1->full_article_number;
+                        $boosterCart->article_number = $article_number;
+                        $boosterCart->mechanical_article_number = $mechanical_article_number;
+                        $boosterCart->electrical_article_number = $electrical_article_number;
+                    }
+
+                $boosterCart->pump_type = $request->pump_type;
+                $boosterCart->model_no = $request->pump_model;
+                $boosterCart->booster_article_number = $request->article_number;
+                //$boosterCart->article_number = $request->article_number;
+                $boosterCart->motor_power = $request->power;
+                $boosterCart->supply_voltage = $request->voltage;
+                $boosterCart->manifold = $request->manifold;
+                $boosterCart->system_pressure = $request->system_pressure;
+                $boosterCart->pump_price = $request->pump_unit_price;
+                $boosterCart->cp_id = $request->cp_id;
+                $boosterCart->booster_overhead = $overHead;
+                $boosterCart->inter_company_margin = $interCompanyMargin;
+                $boosterCart->booster_price = $request->total_price;
+                $boosterCart->standard_component_price = $request->standard_component_price;
+                $boosterCart->mechanical_system_price = $request->mechanical_system_price;
+                $boosterCart->cablePrice = $request->cablePrice;
+                $boosterCart->ptp_distance_id = $request->ptp_distance_id;
+                $boosterCart->base_frame_size_constant = $base_frame_size_constant;
+                $boosterCart->cable_size_ampere_constant = $cable_size_ampere_constant;
+                $boosterCart->cable_length_constant = $cable_length_constant;
+                $boosterCart->spare_length = $spare_length;
+
+                if($request->cp_price == null){
+                    $request->cp_price = $BoosterCartData->cp_price;
+                }
+                $boosterCart->cp_price = $request->cp_price;
+                $boosterCart->adder_ids = $adderIds;
+                $boosterCart->total_adders_price = $request->code_price;
+                $boosterCart->mechanical_adder_ids = $mechanicalAdderIds;
+                $boosterCart->mechanical_total_adders_price = $request->mechanical_code_price;
+                $boosterCart->price = $request->total_price;
+                $boosterCart->total_price = $request->total_price;
+                $boosterCart->qty = 1;
+                $boosterCart->user_id = auth()->user()->id;
+                $boosterCart->created_at = date("Y-m-d H:i:s");
+                $boosterCart->updated_at = date("Y-m-d H:i:s");
+				$boosterCart->country_origin = $request->country;
+                $boosterCart->ksa_full_article_number = $new_ksa_article_number;
+                $boosterCart->quotation_no = $request->qoutation_value;
+
+                $boosterCart->mechanical_items_price = $request->mechanical_items_price + ($request->mechanical_code_price * $overHead) / $interCompanyMargin;
+
+                $boosterCart->electrical_items_price = ($request->control_panel_price_for_booster) / $interCompanyMargin + ($request->code_price * $overHead) / $interCompanyMargin;
+
+                // dd($request->control_panel_price_for_booster);
+
+                $boosterCart->save();
+                $boosterCartId = $boosterCart->id;
+            
+                if (!empty($bill_of_mechanical)) {
+                    foreach ($bill_of_mechanical as $data) {
+                        $this->insertBoosterItem($boosterCartId, $data['brand_code'], $data['function_code'], $data['range'], $data['qty'], $data['price'], $data);
+                    }
+                }
+                $this->insertItem($boosterCartId, $request->no_of_pump, $request->ptp_distance_id, $request->system_pressure, $request->manifold);
+
+                //here123
+                $this->getControlPanelDataItemSave($request->cp_id, $request, $boosterCartId);
+
+                if ($request->mechanical_adder_ids) {
+                    $this->boosterAddersData($boosterCartId, $request);
+                }
+            } else {
+                if (empty($boosterCartData->quotation_no)) {
+                    $msg = 'This item already in your cart.';
+                    return response()->json(array('success' => true, 'msg' => $msg));
+                } else {
+                    if(!empty($request->full_article_number) && $request->full_article_number != null)
+                    {
+						$new_ksa_article_number = '';
+                        if(auth()->user()->country_id == 6){
+                            if($boosterCartData){
+                                if($boosterCartData->full_article_number != "" || $boosterCartData->full_article_number != null){
+									// Replace "683" with "339"
+                                    if($request->country == "ksa"){
+                                        $new_ksa_article_number = str_replace("683", "339", $boosterCartData->full_article_number);
+                                    }
+                                }
+                            }
+                        }
+                        $boosterCart = $boosterCartData->replicate();
+                        if(!empty($request->full_article_number) && $request->full_article_number != null)
+                        {
+                            $boosterCart->full_article_number = $request->full_article_number;
+                            $boosterCart->article_number = $article_number;
+                        }
+                        $boosterCart->mechanical_total_adders_price  = $request->mechanical_code_price;
+                        $boosterCart->price = $request->total_price;
+                        $boosterCart->total_price = $request->total_price;
+                        $boosterCart->qty = 1;
+                        $boosterCart->quotation_no = $request->qoutation_value;
+
+                        $boosterCart->mechanical_items_price = $request->mechanical_items_price;
+                        $boosterCart->electrical_items_price = $request->electrical_items_price;
+
+                        $boosterCart->save();
+                    }
+                    else{
+                        //here1
+                        $boosterCart = $boosterCartData->replicate();
+                        // $boosterCart->quotation_no = null;
+                        $boosterCart->quotation_no = $request->qoutation_value;
+						$boosterCart->country_origin = $request->country;
+                        $boosterCart->ksa_full_article_number = $new_ksa_article_number;
+                        $boosterCart->qty = 1;
+                        $boosterCart->save();
+                    }
+                    //here base frame
+                    $boosterCartId = $boosterCart->id;
+                    if (!empty($bill_of_mechanical)) {
+                        foreach ($bill_of_mechanical as $data){
+                            $this->insertBoosterItem($boosterCartId,  $data['brand_code'], $data['function_code'], $data['range'],  $data['qty'], $data['price'] , $data);
+                        }
+                    }
+
+                    $this->insertItem($boosterCartId, $request->no_of_pump, $request->ptp_distance_id, $request->system_pressure, $request->manifold);
+                    $this->getControlPanelDataItemSave($request->cp_id, $request, $boosterCartId);
+                    if ($request->mechanical_adder_ids) {
+                        $this->boosterAddersData($boosterCartId, $request);
+                    }
+                }
+            }
+        } else{
+                $boosterCartData = BoosterCart::where('pump_type', $request->pump_type) 
+                    ->where('model_no', $request->pump_model)
+                    ->where('motor_power', $request->power)
+                    ->where('supply_voltage', $request->voltage)
+                    ->where('manifold', $request->manifold)
+                    ->where('system_pressure', $request->system_pressure)
+                    //->where('pump_price', $request->pump_unit_price)
+                    ->where('cp_id', $request->cp_id)
+                    ->whereNull('adder_ids')
+                    ->whereNull('mechanical_adder_ids')
+                    ->where('user_id', auth()->user()->id)
+                    ->orderBy('id', 'desc');
+                    
+                    if($boosterCartData != null && $request->pump_type == "manually"){
+                        $boosterCartData = $boosterCartData->where('pump_price',$request->pump_unit_price);
+                    }
+                    
+                    $boosterCartData = $boosterCartData->first();
+
+                if($boosterCartData == null || $request->qoutation_value != null){
+                    $boosterCart = new BoosterCart;
+					$new_ksa_article_number = '';
+                    if(auth()->user()->country_id == 6){
+                        if($boosterCartData){
+								if($boosterCartData->full_article_number != "" || $boosterCartData->full_article_number != null){
+                                if($request->country == "ksa"){
+									$new_ksa_article_number = str_replace("683", "339", $boosterCartData->full_article_number);
+                                    $boosterCart->ksa_full_article_number = $new_ksa_article_number;
+								}
+                            }
+                        }
+                    }
+                    $boosterCartData1 = BoosterCart::where('pump_type', $request->pump_type) 
+                    ->where('model_no', $request->pump_model)
+                    ->where('motor_power', $request->power)
+                    ->where('supply_voltage', $request->voltage)
+                    ->where('manifold', $request->manifold)
+                    ->where('system_pressure', $request->system_pressure)
+                    //->where('pump_price', $request->pump_unit_price)
+                    ->where('cp_id', $request->cp_id)
+                    ->whereNull('adder_ids')
+                    ->whereNull('mechanical_adder_ids')
+                    ->orderBy('id', 'desc');
+
+                     if($request->pump_type == "manually"){
+                        $boosterCartData1 = $boosterCartData1->where('pump_price',$request->pump_unit_price);
+                    }
+                  
+                    $boosterCartData1 = $boosterCartData1->first();
+
+                    //this if condition is for manual calculation...!!!
+                    if($boosterCartData1 && empty($request->full_article_number) && $request->full_article_number == null)
+                    {
+                        $boosterCart->full_article_number = $boosterCartData1->full_article_number;
+                        $boosterCart->article_number = $boosterCartData1->article_number;
+                        $boosterCart->mechanical_article_number = $boosterCartData1->mechanical_article_number;
+                        $boosterCart->electrical_article_number = $boosterCartData1->electrical_article_number;
+                    }
+                    //this if condition is for search functionality...!!!
+                    if(!empty($request->full_article_number) && $request->full_article_number != null)
+                    {
+                        $boosterCart->full_article_number = $request->full_article_number;
+                        $boosterCart->article_number = $article_number;
+                        $boosterCart->mechanical_article_number = $mechanical_article_number;
+                        $boosterCart->electrical_article_number = $electrical_article_number;
+                    }
+
+                    //Bare SHAFT dATA
+                    $boosterCart->pump_type = $request->pump_type;
+                    $boosterCart->model_no = $request->pump_model;
+                    $boosterCart->booster_article_number = $request->article_number;
+                    // $boosterCart->article_number = $request->article_number;
+                    $boosterCart->motor_power = $request->power;
+                    $boosterCart->supply_voltage = $request->voltage;
+                    $boosterCart->manifold = $request->manifold;
+                    $boosterCart->system_pressure = $request->system_pressure;
+                    $boosterCart->pump_price = $request->pump_unit_price;
+                    $boosterCart->cp_id = $request->cp_id;
+                    $boosterCart->booster_overhead = $overHead;
+                    $boosterCart->inter_company_margin = $interCompanyMargin;
+                    $boosterCart->booster_price = $request->total_price;
+                    $boosterCart->standard_component_price = $request->standard_component_price;
+                    $boosterCart->mechanical_system_price = $request->mechanical_system_price;
+                    $boosterCart->cablePrice = $request->cablePrice;
+                    $boosterCart->ptp_distance_id = $request->ptp_distance_id;
+                    $boosterCart->base_frame_size_constant = $base_frame_size_constant;
+                    $boosterCart->cable_size_ampere_constant = $cable_size_ampere_constant;
+                    $boosterCart->cable_length_constant = $cable_length_constant;
+                    $boosterCart->spare_length = $spare_length;
+                    $boosterCart->quotation_no = $request->qoutation_value;
+                    $boosterCart->price = $request->total_price;
+                    $boosterCart->total_price = $request->total_price;
+                    $boosterCart->qty = 1;
+                    $boosterCart->user_id = auth()->user()->id;
+                    $boosterCart->created_at = date("Y-m-d H:i:s");
+                    $boosterCart->updated_at = date("Y-m-d H:i:s");
+					$boosterCart->country_origin = $request->country;
+                    $boosterCart->ksa_full_article_number = $new_ksa_article_number;
+
+                    $boosterCart->mechanical_items_price = $request->mechanical_items_price;
+                    $boosterCart->electrical_items_price = $request->electrical_items_price;
+
+                    $boosterCart->save();
+                    $boosterCartId = $boosterCart->id;
+                    if (!empty($bill_of_mechanical)) {
+                        foreach ($bill_of_mechanical as $data) {
+                            $this->insertBoosterItem($boosterCartId, $data['brand_code'], $data['function_code'], $data['range'],  $data['qty'], $data['price'], $data);
+                        }
+                    }
+                $this->insertItem($boosterCartId, $request->no_of_pump, $request->ptp_distance_id, $request->system_pressure, $request->manifold);
+                $this->getControlPanelDataItemSave($request->cp_id, $request, $boosterCartId);
+            } else {
+                if(empty($boosterCartData->quotation_no)){
+                    $msg = 'This item already in your cart.';
+                    return response()->json(array('success' => true, 'msg' => $msg));
+                }else{
+					$new_ksa_article_number = '';
+                    if(auth()->user()->country_id == 6){
+                        if($boosterCartData){
+						if($boosterCartData->full_article_number != "" || $boosterCartData->full_article_number != null){
+                                // Replace "683" with "339"
+                                if($request->country == "ksa"){
+								$new_ksa_article_number = str_replace("683", "339", $boosterCartData->full_article_number);
+                                }
+                            }
+                        }
+                    }
+                    $boosterCart = $boosterCartData->replicate();
+                   
+                    if($request->pump_type == "manually"){
+                        $boosterCart->pump_price = $request->pump_unit_price;
+                    }
+
+                    // here
+                    if(!empty($request->full_article_number) && $request->full_article_number != null)
+                    {
+                        // $boosterCart->full_article_number = $request->full_article_number;
+                        $boosterCart->full_article_number = $boosterCartData->full_article_number;
+                        $boosterCart->article_number = $article_number;
+                    }
+
+                    // $boosterCart->quotation_no = null;
+                    $boosterCart->quotation_no = $request->qoutation_value;
+                    $boosterCart->qty = 1;
+					$boosterCart->country_origin = $request->country;
+                    $boosterCart->ksa_full_article_number = $new_ksa_article_number;
+                    $boosterCart->save();
+                    $boosterCartId = $boosterCart->id;
+                    //here
+                    if (!empty($bill_of_mechanical)) {
+                        foreach ($bill_of_mechanical as $data) {
+                            $this->insertBoosterItem($boosterCartId,$data['brand_code'],$data['function_code'],$data['range'],$data['qty'],$data['price'],$data);
+                        }
+                    }
+                    // $data = $this->getBoosterDataItemSave($request, $boosterCartId);
+                    $this->insertItem($boosterCartId, $request->no_of_pump, $request->ptp_distance_id, $request->system_pressure, $request->manifold);
+                    $this->getControlPanelDataItemSave($request->cp_id, $request, $boosterCartId);
+                }
+            }
+        }
+        if($request->qoutation_value != null || !empty($request->qoutation_value)){
+            app('App\Http\Controllers\Frontend\QuotationController')->AddQuotationWithBooster($request->qoutation_value,$request->total_price,$boosterCart->id);
+        }
+        return response()->json(array('success' => true, 'url' => url('/controlpanel/cart/' . auth()->user()->id)));
+    }
+    */
+    // Original Code End
     
     public function addToCart(Request $request) 
-    {     
+    {
+        // A Code: 24-06-2026 Start
+        $getValue = function ($table, $id) {
+            return !empty($id)
+                ? DB::table($table)->where('id', $id)->value('value')
+                : null;
+        };
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)->where('value', $value)->value('id')
+                : null;
+        };
+        // A Code: 24-06-2026 End
+
 		$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
 		if(auth()->user()->country_id == 6){
             $BoosterCartData = $BoosterCartData->orWhere('ksa_full_article_number','=',$request->full_article_number);
@@ -959,17 +1443,17 @@ class BoosterSetController extends Controller {
             $boosterCartCpDetail = BoosterCartCpDetail::where('booster_cart_id', $BoosterCartData->id)->latest('id')->first();
             if ($boosterCartCpDetail) { 
 
-                $request->no_of_pump = self::getIdByValue('number_of_pumps', $boosterCartCpDetail->no_of_pump);
-                $request->power_rating = self::getIdByValue('powers', $boosterCartCpDetail->power);
-                $request->voltage_id = self::getIdByValue('voltages', $boosterCartCpDetail->voltage);
-                $request->application = self::getIdByValue('applications', $boosterCartCpDetail->application);
-                $request->ambient_temp = self::getIdByValue('ambient_temps', $boosterCartCpDetail->ambient_temp);
-                $request->stater_type = self::getIdByValue('starter_types', $boosterCartCpDetail->stater_type);
-                $request->communication_protocol = self::getIdByValue('comunication_protocols', $boosterCartCpDetail->communication_protocol);
-                $request->ip_rating = self::getIdByValue('ip_ratings', $boosterCartCpDetail->ip_rating);
-                $request->component = self::getIdByValue('components', $boosterCartCpDetail->component);
-                $request->enclosure = self::getIdByValue('enclousres', $boosterCartCpDetail->enclosure);
-                $request->range = self::getIdByValue('ranges', $boosterCartCpDetail->range);
+                $request->no_of_pump = $getIdByValue('number_of_pumps', $boosterCartCpDetail->no_of_pump);
+                $request->power_rating = $getIdByValue('powers', $boosterCartCpDetail->power);
+                $request->voltage_id = $getIdByValue('voltages', $boosterCartCpDetail->voltage);
+                $request->application = $getIdByValue('applications', $boosterCartCpDetail->application);
+                $request->ambient_temp = $getIdByValue('ambient_temps', $boosterCartCpDetail->ambient_temp);
+                $request->stater_type = $getIdByValue('starter_types', $boosterCartCpDetail->stater_type);
+                $request->communication_protocol = $getIdByValue('comunication_protocols', $boosterCartCpDetail->communication_protocol);
+                $request->ip_rating = $getIdByValue('ip_ratings', $boosterCartCpDetail->ip_rating);
+                $request->component = $getIdByValue('components', $boosterCartCpDetail->component);
+                $request->enclosure = $getIdByValue('enclousres', $boosterCartCpDetail->enclosure);
+                $request->range = $getIdByValue('ranges', $boosterCartCpDetail->range);
 
             }else{
 
@@ -991,6 +1475,8 @@ class BoosterSetController extends Controller {
             }
             // A Code: 24-06-2026 End
 
+            //$cp_id = DB::table('control_panels')->where('id','=',$BoosterCartData->cp_id)->first();
+            // $request->no_of_pump = $cp_id->no_of_pump_id;
             $request->pump_type = $BoosterCartData->pump_type;
             $request->booster_article_number = $BoosterCartData->booster_article_number;
             $request->article_number = $BoosterCartData->booster_article_number;
@@ -1011,18 +1497,17 @@ class BoosterSetController extends Controller {
             // A Code: 24-06-2026 Start
 
             // Find New Control Panel Data on base of Request Date
-            $cpNo_of_pump = self::getValue('number_of_pumps', $request->no_of_pump);
-            $cpPower = self::getValue('powers', $request->power_rating);
-            $cpVoltage = self::getValue('voltages', $request->voltage_id);           
-            $cpApplication = self::getValue('applications', $request->application);
-            $cpAmbient_temp = self::getValue('ambient_temps', $request->ambient_temp);
-            $cpStater_type = self::getValue('starter_types', $request->stater_type);
-            $cpCommunication_protocol = self::getValue('comunication_protocols', $request->communication_protocol);
-            $cpIp_rating = self::getValue('ip_ratings', $request->ip_rating);
-            $cpComponent = self::getValue('components', $request->component);
-            $cpEnclosure = self::getValue('enclousres', $request->enclosure); 
-            $cpRange = self::getValue('ranges', $request->range); 
-            
+            $cpNo_of_pump = $getValue('number_of_pumps', $request->no_of_pump); 
+            $cpPower = $getValue('powers', $request->power_rating);
+            $cpVoltage = $getValue('voltages', $request->voltage_id);           
+            $cpApplication = $getValue('applications', $request->application);
+            $cpAmbient_temp = $getValue('ambient_temps', $request->ambient_temp);
+            $cpStater_type = $getValue('starter_types', $request->stater_type);
+            $cpCommunication_protocol = $getValue('comunication_protocols', $request->communication_protocol);
+            $cpIp_rating = $getValue('ip_ratings', $request->ip_rating);
+            $cpComponent = $getValue('components', $request->component);
+            $cpEnclosure = $getValue('enclousres', $request->enclosure); 
+            $cpRange = $getValue('ranges', $request->range); 
 
         }else{
             $cpNo_of_pump = $request->no_of_pump ?? null;    
@@ -1038,6 +1523,20 @@ class BoosterSetController extends Controller {
             $cpRange = $request->range ?? null;
         }                
         $power1 = number_format($cpPower, 2, '.', '');
+
+        // $NewcontrolPanelData = ControlPanelsMaster::whereRaw("FIND_IN_SET(?, REPLACE(no_of_pumps, ' ', ''))", [$cpNo_of_pump])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_rating, ' ', ''))", [$power1])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_supply, ' ', ''))", [$cpVoltage])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(applications, ' ', ''))", [$cpApplication])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(min_of_ambient_temp, ' ', ''))", [$cpAmbient_temp])
+        //     ->where('starter_type', $cpStater_type)
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(communication_protocol, ' ', ''))", [$cpCommunication_protocol])
+        //     ->where('ip_rating', $cpIp_rating)
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(components, ' ', ''))", [$cpComponent])
+        //     ->whereRaw("FIND_IN_SET(?, REPLACE(enclosure, ' ', ''))", [$cpEnclosure])
+        //     ->where('range', $cpRange)
+        //     ->first(); 
+
         // A Code: 30-06-2026 Start
         $NewcontrolPanelData = ControlPanelsMaster::whereRaw("FIND_IN_SET(?, no_of_pumps)", [$cpNo_of_pump])
             ->whereRaw("FIND_IN_SET(?, power_rating)", [$power1])
@@ -1167,6 +1666,7 @@ class BoosterSetController extends Controller {
                 $boosterCart->manifold = $request->manifold;
                 $boosterCart->system_pressure = $request->system_pressure;
                 $boosterCart->pump_price = $request->pump_unit_price;
+                //$boosterCart->cp_id = $request->cp_id;
                 $boosterCart->cp_id = $booster_cart_cp_id; // A Code: 25-06-2026
                 $boosterCart->booster_overhead = $overHead;
                 $boosterCart->inter_company_margin = $interCompanyMargin;
@@ -1228,7 +1728,7 @@ class BoosterSetController extends Controller {
 
                 foreach ($fields as $requestField => $masterTable) {
                     $value = isset($request->$requestField) ? $request->$requestField : null;
-                    $result[$requestField] = self::getValue($masterTable, $value);
+                    $result[$requestField] = $getValue($masterTable, $value);
                     if ($result[$requestField] == false) {
                         $result[$requestField] = $value;
                     }
@@ -1351,17 +1851,17 @@ class BoosterSetController extends Controller {
                             $boosterCartCp_info->save();
                         }else{
 
-                            $cpNo_of_pump = self::getValue('number_of_pumps', $request->no_of_pump);
-                            $cpPower = self::getValue('powers', $request->power);
-                            $cpVoltage = self::getValue('voltages', $request->voltage);
-                            $cpApplication = self::getValue('applications', $request->application);
-                            $cpAmbient_temp = self::getValue('ambient_temps', $request->ambient_temp);
-                            $cpStater_type = self::getValue('starter_types', $request->stater_type);
-                            $cpCommunication_protocol = self::getValue('comunication_protocols', $request->communication_protocol);
-                            $cpIp_rating = self::getValue('ip_ratings', $request->ip_rating);
-                            $cpComponent = self::getValue('components', $request->component);
-                            $cpEnclosure = self::getValue('enclousres', $request->enclosure); 
-                            $cpRange = self::getValue('ranges', $request->range); 
+                            $cpNo_of_pump = $getValue('number_of_pumps', $request->no_of_pump);
+                            $cpPower = $getValue('powers', $request->power);
+                            $cpVoltage = $getValue('voltages', $request->voltage);
+                            $cpApplication = $getValue('applications', $request->application);
+                            $cpAmbient_temp = $getValue('ambient_temps', $request->ambient_temp);
+                            $cpStater_type = $getValue('starter_types', $request->stater_type);
+                            $cpCommunication_protocol = $getValue('comunication_protocols', $request->communication_protocol);
+                            $cpIp_rating = $getValue('ip_ratings', $request->ip_rating);
+                            $cpComponent = $getValue('components', $request->component);
+                            $cpEnclosure = $getValue('enclousres', $request->enclosure); 
+                            $cpRange = $getValue('ranges', $request->range); 
 
                             BoosterCartCpDetail::create([
                                 'booster_cart_id'        => $boosterCartId,
@@ -1429,16 +1929,16 @@ class BoosterSetController extends Controller {
                     // A Code: 24-06-2026 Start
                     $request_power = $request->power ?? null;
                     $request_voltage = $request->voltage ?? null;
-                    $cpRange = self::getValue('ranges', $request->range);                    
+                    $cpRange = $getValue('ranges', $request->range);                    
 
                     $voltage_value = $request_voltage;                    
-                    $cpVoltage = self::getValue('voltages', $request_voltage);
+                    $cpVoltage = $getValue('voltages', $request_voltage);
                     if($cpVoltage == false)
                     {
                         $cpVoltage = $voltage_value;
                     }
                     $power_value = $request_power;
-                    $cpPower = self::getValue('powers', $request_power);
+                    $cpPower = $getValue('powers', $request_power);
                     if($cpPower == false)
                     {
                         $cpPower = $power_value;
@@ -1527,11 +2027,13 @@ class BoosterSetController extends Controller {
                     $boosterCart->pump_type = $request->pump_type;
                     $boosterCart->model_no = $request->pump_model;
                     $boosterCart->booster_article_number = $request->article_number;
+                    // $boosterCart->article_number = $request->article_number;
                     $boosterCart->motor_power = $request->power;
                     $boosterCart->supply_voltage = $request->voltage;
                     $boosterCart->manifold = $request->manifold;
                     $boosterCart->system_pressure = $request->system_pressure;
                     $boosterCart->pump_price = $request->pump_unit_price;
+                    //$boosterCart->cp_id = $request->cp_id;
                     $boosterCart->cp_id = $booster_cart_cp_id; // A Code: 22-06-2026
                     $boosterCart->booster_overhead = $overHead;
                     $boosterCart->inter_company_margin = $interCompanyMargin;
@@ -1579,7 +2081,7 @@ class BoosterSetController extends Controller {
 
                         foreach ($fields as $requestField => $masterTable) {
                             $value = isset($request->$requestField) ? $request->$requestField : null;
-                            $result[$requestField] = self::getValue($masterTable, $value);
+                            $result[$requestField] = $getValue($masterTable, $value);
                             if ($result[$requestField] == false) {
                                 $result[$requestField] = $value;
                             }
@@ -1669,31 +2171,45 @@ class BoosterSetController extends Controller {
                         if (!$boosterCartCpDetail) { 
                             $request_data = DB::table('control_panels')->where('id', $boosterCartData->cp_id)->first();
 
-                            // Find New Control Panel Data on base of Old Control panel Request Data
-                            $request->no_of_pump = self::getValue('number_of_pumps', $request_data->no_of_pump_id);
-                            $request->power = self::getValue('powers', $request_data->power_id);
-                            $request->voltage = self::getValue('voltages', $request_data->voltage_id);
-                            $request->application = self::getValue('applications', $request_data->application_id);
-                            $request->ambient_temp = self::getValue('ambient_temps', $request_data->ambient_temp_id);
-                            $request->stater_type = self::getValue('starter_types', $request_data->stater_type_id);
-                            $request->communication_protocol = self::getValue('comunication_protocols', $request_data->communication_protocol_id);
-                            $request->ip_rating = self::getValue('ip_ratings', $request_data->ip_rating_id);
-                            $request->component = self::getValue('components', $request_data->components_id);
-                            $request->enclosure = self::getValue('enclousres', $request_data->enclosure_id);
+                            // Find New Control Panel Data on base of Request Data
+                            $request->no_of_pump  = DB::table('number_of_pumps')->where('id', $request_data->no_of_pump_id)->value('value');
+                            $request->power = DB::table('powers')->where('id', $request_data->power_id)->value('value');
+                            $request->voltage = DB::table('voltages')->where('id', $request_data->voltage_id)->value('value');
+                            $request->application = DB::table('applications')->where('id', $request_data->application_id)->value('value');                 
+                            $request->ambient_temp = DB::table('ambient_temps')->where('id', $request_data->ambient_temp_id)->value('value'); 
+                            $request->stater_type = DB::table('starter_types')->where('id', $request_data->stater_type_id)->value('value');
+                            $request->communication_protocol = DB::table('comunication_protocols')->where('id', $request_data->communication_protocol_id)->value('value'); 
+                            $request->ip_rating = DB::table('ip_ratings')->where('id', $request_data->ip_rating_id)->value('value');
+                            $request->component = DB::table('components')->where('id', $request_data->components_id)->value('value'); 
+                            $request->enclosure = DB::table('enclousres')->where('id', $request_data->enclosure_id)->value('value'); 
                             
-                            $cpNo_of_pump = self::getValue('number_of_pumps', $request_data->no_of_pump_id);
-                            $cpPower = self::getValue('powers', $request_data->power_id);
-                            $cpVoltage = self::getValue('voltages', $request_data->voltage_id);
-                            $cpApplication = self::getValue('applications', $request_data->application_id);
-                            $cpAmbient_temp = self::getValue('ambient_temps', $request_data->ambient_temp_id);
-                            $cpStater_type = self::getValue('starter_types', $request_data->stater_type_id);
-                            $cpCommunication_protocol = self::getValue('comunication_protocols', $request_data->communication_protocol_id);
-                            $cpIp_rating = self::getValue('ip_ratings', $request_data->ip_rating_id);
-                            $cpComponent = self::getValue('components', $request_data->components_id);
-                            $cpEnclosure = self::getValue('enclousres', $request_data->enclosure_id); 
-                            $cpRange = self::getValue('ranges', $request_data->range);                            
+                            $cpNo_of_pump = $getValue('number_of_pumps', $request_data->no_of_pump_id);
+                            $cpPower = $getValue('powers', $request_data->power_id);
+                            $cpVoltage = $getValue('voltages', $request_data->voltage_id);
+                            $cpApplication = $getValue('applications', $request_data->application_id);
+                            $cpAmbient_temp = $getValue('ambient_temps', $request_data->ambient_temp_id);
+                            $cpStater_type = $getValue('starter_types', $request_data->stater_type_id);
+                            $cpCommunication_protocol = $getValue('comunication_protocols', $request_data->communication_protocol_id);
+                            $cpIp_rating = $getValue('ip_ratings', $request_data->ip_rating_id);
+                            $cpComponent = $getValue('components', $request_data->components_id);
+                            $cpEnclosure = $getValue('enclousres', $request_data->enclosure_id); 
+                            $cpRange = $getValue('ranges', $request_data->range);  
                             
-                            $power1 = number_format($cpPower, 2, '.', '');                                
+                            
+                            $power1 = number_format($cpPower, 2, '.', '');   
+                            // $NewcontrolPanelData = ControlPanelsMaster::whereRaw("FIND_IN_SET(?, REPLACE(no_of_pumps, ' ', ''))", [$cpNo_of_pump])
+                            //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_rating, ' ', ''))", [$power1])
+                            //     ->whereRaw("FIND_IN_SET(?, REPLACE(power_supply, ' ', ''))", [$cpVoltage])
+                            //     ->whereRaw("FIND_IN_SET(?, REPLACE(applications, ' ', ''))", [$cpApplication])
+                            //     ->whereRaw("FIND_IN_SET(?, REPLACE(min_of_ambient_temp, ' ', ''))", [$cpAmbient_temp])
+                            //     ->where('starter_type', $cpStater_type)
+                            //     ->whereRaw("FIND_IN_SET(?, REPLACE(communication_protocol, ' ', ''))", [$cpCommunication_protocol])
+                            //     ->where('ip_rating', $cpIp_rating)
+                            //     ->whereRaw("FIND_IN_SET(?, REPLACE(components, ' ', ''))", [$cpComponent])
+                            //     ->whereRaw("FIND_IN_SET(?, REPLACE(enclosure, ' ', ''))", [$cpEnclosure])
+                            //     ->where('range', $cpRange)
+                            //     ->first();  
+                                
                             // A Code: 30-06-2026 Start
                             $NewcontrolPanelData = ControlPanelsMaster::whereRaw("FIND_IN_SET(?, no_of_pumps)", [$cpNo_of_pump])
                                 ->whereRaw("FIND_IN_SET(?, power_rating)", [$power1])
@@ -1736,10 +2252,12 @@ class BoosterSetController extends Controller {
                         // here
                         if(!empty($request->full_article_number) && $request->full_article_number != null)
                         {
+                            // $boosterCart->full_article_number = $request->full_article_number;
                             $boosterCart->full_article_number = $boosterCartData->full_article_number;
                             $boosterCart->article_number = $article_number;
                         }
 
+                        // $boosterCart->quotation_no = null;
                         $boosterCart->quotation_no = $request->qoutation_value;  
                         $boosterCart->cp_id = $booster_cart_cp_id; // A Code: 22-06-2026
                         $boosterCart->qty = 1;
@@ -1775,7 +2293,8 @@ class BoosterSetController extends Controller {
                                 'range'                  => $request->range,
                             ]); 
                         } 
-                        // A Code: 22-06-2026 End                                                   
+                        // A Code: 22-06-2026 End                       
+                                                   
 
                         //here
                         if (!empty($bill_of_mechanical)) {
@@ -1783,6 +2302,7 @@ class BoosterSetController extends Controller {
                                 $this->insertBoosterItem($boosterCartId,$data['brand_code'],$data['function_code'],$data['range'],$data['qty'],$data['price'],$data);
                             }
                         }
+                        // $data = $this->getBoosterDataItemSave($request, $boosterCartId);
                         $this->insertItem($boosterCartId, $request->no_of_pump, $request->ptp_distance_id, $request->system_pressure, $request->manifold);
                         //dd("case 4: getControlPanelDataItemSave full pump",$request->cp_id,$request->no_of_pump,$request->power,$request->voltage,$request->range);
                         //$this->getControlPanelDataItemSave($request->cp_id, $request, $boosterCartId);
@@ -1840,14 +2360,14 @@ class BoosterSetController extends Controller {
                             $price = 0.00;
                         }
                     } else {
-                        // change:- Riddhi Patva
-                        // Date :- 24-3-2022
-                        // old code is in comment
+                       //change:- Riddhi Patva
+                       //Date :- 24-3-2022
+                       //old code is in comment
                         // $price = $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName]; //Qty * price
                         
                         $price = $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName];  //Qty * price
                         $this->insertBoosterItem($booster_cart_id, $val['brand_code'], $val['function_code'], $val['range'], $val[$columnName], $price, $val);
-                        // echo "Normal  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName] . "</br>";
+            // echo "Normal  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName] . "</br>";
                     }
                 }
             }
@@ -1923,9 +2443,163 @@ class BoosterSetController extends Controller {
         return view('frontend.booster.items', compact('items', 'cpBoosterItems','boosterCartData'));
     }
 
+    // public function getControlPanelDataItemSave($cpId, $request, $boosterCartId) {
+    //     $controlPanelData = new ControlPanel();
+    //     $controlPanelData = ControlPanel::where('id', '=', $cpId)
+    //             ->with('noofpumps')
+    //             ->with('powers')
+    //             ->with('voltages')
+    //             ->with('applications')
+    //             ->with('ambienttemps')
+    //             ->with('startertypes')
+    //             ->with('components')
+    //             ->with('ranges')
+    //             ->with('enclousres')
+    //             ->with('comunicationprotocols')
+    //             ->with('ipratings')
+    //             ->get();
+    //     $numberOfPump = $controlPanelData[0]->noofpumps['value'];
+    //     if (ControlPanel::isIntegerColumn($controlPanelData[0]->powers['value'])) {
+    //         $power = $controlPanelData[0]->powers['value'];
+    //         $voltage = $controlPanelData[0]->voltages['value'];
+    //         $columnName = $numberOfPump . 'x' . $power . "__0kwx" . $voltage . 'v';
+    //     } else {
+    //         $power = str_replace(".", '__', $controlPanelData[0]->powers['value']);
+    //         $voltage = $controlPanelData[0]->voltages['value'];
+    //         $columnName = $numberOfPump . 'x' . $power . "kwx" . $voltage . 'v';
+    //     }
+
+    //     $tableName = $controlPanelData[0]['table_name'];
+    //     $starterCode = $controlPanelData[0]['starter_code'];
+    //     $cpRecordsData = [];
+    //     $returnHTML = '';
+    //     $price = 0.00;
+
+    //     if (Schema::hasTable($tableName)) {
+    //     //   DB::enableQueryLog();
+    //         if (Schema::hasColumn($tableName, $columnName)) {
+    //             $cpRecords = DB::table($tableName)->select('item_description', 'material_number', 'wilo_article_number', 'weight', 'brand_code', 'function_code', 'range', 'unit_price', 'margin', $columnName)
+    //                             ->whereNotNull($columnName)->where($columnName, '!=', 0)->get();
+    //             $cpRecords1 = DB::table($tableName)
+    //                         ->select('item_description', 'material_number', 'wilo_article_number', 'weight', 'brand_code', 'function_code', 'range', 'unit_price', 'margin', $columnName)
+    //                         ->whereNotNull($columnName)
+    //                         ->where($columnName, '!=', 0)
+    //                         ->where('function_code','=','1')
+    //                         ->count();
+    //             $arrayResult = json_decode(json_encode($cpRecords), true);
+
+    //             $enclousreAdderItemData = null;
+    //             if ($request->adder_ids) {
+    //                 $price = $this->addersData($request, $boosterCartId);
+    //                 $enclousreAdderItemData = $request->enclousreItem;
+    //             }
+    //             if ($arrayResult) {
+    //                 $i= 1;
+    //                 if($request->enclosure == null)
+    //                 {
+    //                     $request->enclosure = $controlPanelData[0]->enclosure_id;
+    //                 }
+    //                 foreach ($arrayResult as $key => $val) {
+    //                     $price = $this->calculateControlPanelBomInItem($request, $columnName, $boosterCartId, $enclousreAdderItemData,$i,$cpRecords1,$val);
+    //                     $i++;
+
+    //                     //Before go the price calculation, Brand code “1” should be replaced by “2” and get the relevant the description and article number, weight and price from Master sheet.
+    //                 }
+
+    //                 $tax = Tax::where('id', 1)->get()[0]->amount;
+    //                 dd($tax, ['price' => $price, 'starter_code' => $starterCode, 'range' => $controlPanelData[0]->range]);
+    //                 return ['price' => $price, 'starter_code' => $starterCode, 'range' => $controlPanelData[0]->range];
+    //             }
+    //         }
+    //     }
+    //     return;
+    // }
+
+    // public function getControlPanelDataItemSave($cpId, $request, $boosterCartId) 
+    // {
+    //     // 2. Get control panel data (from cart to ensure consistency)
+    //     $controlPanelData = ControlPanelsMaster::find($cpId);
+    //     if (!$controlPanelData){
+    //         return;
+    //     }
+
+    //     $numberOfPump = trim((string)$request->no_of_pump);
+    //     $power = trim((string)$request->power);
+    //     $voltage = trim((string)$request->voltage);
+    //     $range = trim((string)$request->range);
+
+    //     // Safety check
+    //     if (!$numberOfPump || !$power || !$voltage) {
+    //         //\Log::error('Missing CP Inputs', compact('numberOfPump', 'power', 'voltage'));
+    //         return;
+    //     }
+
+    //     // 4. Normalize power
+    //     $normalizedPower = rtrim(rtrim($power, '0'), '.');
+
+    //     // 5. Generate column name
+    //     if (strpos($normalizedPower, '.') !== false) {
+    //         $formattedPower = str_replace('.', '__', $normalizedPower);
+    //         $columnName = "{$numberOfPump}x{$formattedPower}kwx{$voltage}v";
+    //     } else {
+    //         $columnName = "{$numberOfPump}x{$normalizedPower}__0kwx{$voltage}v";
+    //     } 
+
+    //     $tableName   = $controlPanelData->table_name;
+    //     $starterCode = $controlPanelData->code;
+
+    //     $cpRecordsData = [];
+    //     $returnHTML = '';
+    //     $price = 0.00;          
+
+    //     if (Schema::hasTable($tableName)) {
+    //     //   DB::enableQueryLog();
+    //         if (Schema::hasColumn($tableName, $columnName)) {
+    //             $cpRecords = DB::table($tableName)->select('item_description', 'material_number', 'wilo_article_number', 'weight', 'brand_code', 'function_code', 'range', 'unit_price', 'margin', $columnName)
+    //                             ->whereNotNull($columnName)->where($columnName, '!=', 0)->get();
+    //             $cpRecords1 = DB::table($tableName)
+    //                         ->select('item_description', 'material_number', 'wilo_article_number', 'weight', 'brand_code', 'function_code', 'range', 'unit_price', 'margin', $columnName)
+    //                         ->whereNotNull($columnName)
+    //                         ->where($columnName, '!=', 0)
+    //                         ->where('function_code','=','1')
+    //                         ->count();
+    //             $arrayResult = json_decode(json_encode($cpRecords), true);
+
+    //             $enclousreAdderItemData = null;
+    //             if ($request->adder_ids) {
+    //                 $price = $this->addersData($request, $boosterCartId);
+    //                 $enclousreAdderItemData = $request->enclousreItem;
+    //             }
+    //             if ($arrayResult) {
+    //                 $i= 1;                    
+    //                 if($request->enclosure == null)
+    //                 {
+    //                     //$request->enclosure = $controlPanelData[0]->enclosure_id;
+    //                     $request->enclosure = DB::table('enclousres')->where('value', trim($controlPanelData->enclosure))->value('id');
+    //                 }else{
+    //                     $request->enclosure = DB::table('enclousres')->where('value', trim($request->enclosure))->value('id');
+    //                 } 
+    //                 foreach ($arrayResult as $key => $val) {
+    //                     $price = $this->calculateControlPanelBomInItem($request, $columnName, $boosterCartId, $enclousreAdderItemData,$i,$cpRecords1,$val);
+    //                     $i++;
+
+    //                     //Before go the price calculation, Brand code “1” should be replaced by “2” and get the relevant the description and article number, weight and price from Master sheet.
+    //                 }
+
+    //                 $tax = Tax::where('id', 1)->get()[0]->amount;
+    //                 return ['price' => $price, 'starter_code' => $starterCode, 'range' => $range];
+    //             }
+    //         }
+    //     }
+    //     return;
+    // }
+
     // A Code: 16-06-2026 Start
     public function getControlPanelDataItemSave($cpId, $request, $boosterCartId) 
     {   
+
+        //dd($request->no_of_pump,$request->power,$request->voltage,$request->range);
+        //dd("getControlPanelDataItemSave", $cpId, $request->all(), $boosterCartId);
         // 2. Get control panel data (from cart to ensure consistency)
         $controlPanelData = ControlPanelsMaster::find($cpId);
         if (!$controlPanelData){
@@ -2014,13 +2688,14 @@ class BoosterSetController extends Controller {
         }
 
         // 11. Process items
-        $i = 1; 
-        if ($request->enclosure == null) {
-            $request->enclosure = self::getIdByValue('enclousres', trim($controlPanelData->enclosure));
-        } else {
-            $request->enclosure = self::getIdByValue('enclousres', trim($request->enclosure));
-        }
-
+        $i = 1;
+        if($request->enclosure == null)
+        {
+            //$request->enclosure = $controlPanelData[0]->enclosure_id;
+            $request->enclosure = DB::table('enclousres')->where('value', trim($controlPanelData->enclosure))->value('id');
+        }else{
+            $request->enclosure = DB::table('enclousres')->where('value', trim($request->enclosure))->value('id');
+        }   
         foreach ($arrayResult as $key => $val) {
             $price = $this->calculateControlPanelBomInItem(
                 $request, 
@@ -2037,12 +2712,14 @@ class BoosterSetController extends Controller {
             // the description and article number, weight and price from Master sheet.
         }
         $tax = Tax::where('id', 1)->get()[0]->amount;
+        //dd($tax, ['price' => $price, 'starter_code' => $starterCode, 'range' => $range]);
         return ['price' => $price, 'starter_code' => $starterCode, 'range' => $range];
     }
     // A Code: 16-06-2026 End
 
     public function calculateControlPanelBomInItem($request, $columnName, $boosterCartId, $enclousreAdderItemData,$i,$enclosure_count,$val = []) 
     {
+        //dd("calculateControlPanelBomInItem",$request->all(), $columnName, $boosterCartId, $enclousreAdderItemData,$i,$enclosure_count,$val);
         $price = 0.00;
         if ($enclousreAdderItemData && !empty($enclousreAdderItemData) && $request->enclosure != 3 && $request->enclosure != 4) {
             $enclousreItem = json_decode($request->enclousreItem, true);
@@ -2087,7 +2764,7 @@ class BoosterSetController extends Controller {
                     $unitPrice = $this->getMasterSheetPriceCPData($val['brand_code'], $val['function_code'], $val['range']);
                     if($i==1){
                         // $this->itemSave($val, $val['brand_code'], $val['function_code'], $val['range'], $columnName, $cpId, $price, $unitPrice);
-                    }
+                            }
                 }
             }
 
@@ -2096,30 +2773,39 @@ class BoosterSetController extends Controller {
                 $price = $this->getMasterSheetPriceCPData(2, $val['function_code'], $val['range']) * $val[$columnName]; //Qty * price // 2 parameter is equal to brand code
                 $unitPrice = $this->getMasterSheetPriceCPData(2, $val['function_code'], $val['range']);
                 $this->itemSave(2, $val['function_code'], $val['range'], $columnName, $boosterCartId, $price, $unitPrice,$val);
+                    //                echo "change" . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceCPData(2, $val['function_code'], $val['range']) * $val[$columnName] . "</br>";
             }                    
             else {
                 $price = $this->getMasterSheetPriceCPData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName]; //Qty * price
                 $unitPrice = $this->getMasterSheetPriceCPData($val['brand_code'], $val['function_code'], $val['range']);
                 $this->itemSave($val['brand_code'], $val['function_code'], $val['range'], $columnName, $boosterCartId, $price, $unitPrice,$val);
 
+            //                echo "If condition fail choose brand code 1 **" . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName] . "</br>";
             }
         } else if ($request->enclosure == 3 && $val['brand_code'] == 5 && $val['function_code'] == 1) {
             if ($this->getMasterSheetPriceCPData(31, 63, $val['range'])) {
                 $price = $this->getMasterSheetPriceCPData(31, 63, $val['range']) * $val[$columnName]; //Qty * price
                 $unitPrice = $this->getMasterSheetPriceCPData(31, 63, $val['range']);
                 $this->itemSave(31, 63, $val['range'], $columnName, $boosterCartId, $price, $unitPrice,$val);
+        //                echo "Encloure  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceCPData(31, 63, $val['range']) * $val[$columnName] . "</br>";
             }
+        //
             else {
+                //echo "Not ";
                 $price = 0.00;
             }
         } else if ($request->enclosure == 4 && $val['brand_code'] == 5 && $val['function_code'] == 1) {
-            //4 equal Stainless
+         //4 equal Stainless
             if ($this->getMasterSheetPriceCPData(5, 64, $val['range'])) {
+            //                echo $val['range'];
                 $price = $this->getMasterSheetPriceCPData(5, 64, $val['range']) * $val[$columnName]; //Qty * price
                 $unitPrice = $this->getMasterSheetPriceCPData(5, 64, $val['range']);
                 $this->itemSave(5, 64, $val['range'], $columnName, $boosterCartId, $price, $unitPrice,$val);
+            //                echo "stainless  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceCPData(5, 64, $val['range']) * $val[$columnName] . "</br>";
             }
+            //
             else {
+                //echo "Not ";
                 $price = 0.00;
             }
         }
@@ -2127,11 +2813,15 @@ class BoosterSetController extends Controller {
         else if ($request->enclosure == 2 && $request->stater_type == 1 && $val['brand_code'] == 8) {
             //2 equal META; 1 XTREME
             if ($this->getMasterSheetPriceCPData(32, $val['function_code'], $val['range'])) {
+            //                echo $val['range'];
                 $price = $this->getMasterSheetPriceCPData(32, $val['function_code'], $val['range']) * $val[$columnName]; //Qty * price
                 $unitPrice = $this->getMasterSheetPriceCPData(32, $val['function_code'], $val['range']);
                 $this->itemSave(32, $val['function_code'], $val['range'], $columnName, $boosterCartId, $price, $unitPrice,$val);
+            //                echo "stainless  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceCPData(5, 64, $val['range']) * $val[$columnName] . "</br>";
             }
+            //
             else {
+                //echo "Not ";
                 $price = 0.00;
             }
         } else {
@@ -2149,6 +2839,10 @@ class BoosterSetController extends Controller {
                 $unitPrice = $this->getMasterSheetPriceCPData($val['brand_code'], $val['function_code'], $val['range']);
                 $this->itemSave($val['brand_code'], $val['function_code'], $val['range'], $columnName, $boosterCartId, $price, $unitPrice,$val);
             }
+            // $price = $this->getMasterSheetPriceCPData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName]; //Qty * price
+            // $unitPrice = $this->getMasterSheetPriceCPData($val['brand_code'], $val['function_code'], $val['range']);
+            // $this->itemSave($val, $val['brand_code'], $val['function_code'], $val['range'], $columnName, $boosterCartId, $price, $unitPrice);
+            // echo "Normal  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceCPData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName] . "</br>";
         }
         return $price;
     }
@@ -2186,10 +2880,12 @@ class BoosterSetController extends Controller {
             $item->qty = $val[$columnName];
         }
         $item->save();
+        // echo '<pre>';print_r($item);echo '</pre>';
     }
 
     public function addersData(Request $request, $boosterCartId) 
     {
+        //dd($request->all(), $boosterCartId);
         $noOfPump = $request->no_of_pump;
         $motorPower = $request->power;
         $voltage = $request->voltage;
@@ -2206,6 +2902,7 @@ class BoosterSetController extends Controller {
             foreach ($ids as $id) {
                 switch ($id) {
                     case ($id >= 1 && $id <= 26): //electrical_common_adder code
+                        //id = $column
                         $electricalCommonAdders = DB::table('electrical_common_adder')->select('id', 'item_description', 'material_number', 'wilo_article_number', 'brand_code', 'function_code', 'range', 'weight', 'height', 'margin', $id)
                                         ->whereNotNull($id)->where($id, '!=', 0)->get();
                         $arrayResult = json_decode(json_encode($electricalCommonAdders), true);
@@ -2222,27 +2919,27 @@ class BoosterSetController extends Controller {
                                 $price += $this->getMasterSheetElectricalPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$id]; // Qty = $val[$id]
                                 $unitPrice = $this->getMasterSheetElectricalPriceData($val['brand_code'], $val['function_code'], $val['range']);
                                 $encloureArea += $this->getMasterSheetHeightMultiplyByWidth($val['brand_code'], $val['function_code'], $val['range']) * $val[$id];
-                                // $val['brand_code'] = "1"
-                                // $val['function_code'] = "6"
-                                // $val['range'] = "6"
-                                // $val = array:11 [
-                                //   "id" => 4
-                                //   "item_description" => "S203M-C 6   Mini Circuit Breaker"
-                                //   "material_number" => "2CDS273001R0064"
-                                //   "wilo_article_number" => ""
-                                //   "brand_code" => "1"
-                                //   "function_code" => "6"
-                                //   "range" => "6"
-                                //   "weight" => ""
-                                //   "height" => ""
-                                //   "margin" => ""
-                                //   1 => 1
-                                // ]
-                                // $val[$id] = 1
-                                // $boosterCartId = 5566
-                                // $price = 17.711171662125
-                                // $unitPrice = 17.711171662125
-                                // $id = "1"
+                            // $val['brand_code'] = "1"
+                            // $val['function_code'] = "6"
+                            // $val['range'] = "6"
+                            // $val = array:11 [
+                            //   "id" => 4
+                            //   "item_description" => "S203M-C 6   Mini Circuit Breaker"
+                            //   "material_number" => "2CDS273001R0064"
+                            //   "wilo_article_number" => ""
+                            //   "brand_code" => "1"
+                            //   "function_code" => "6"
+                            //   "range" => "6"
+                            //   "weight" => ""
+                            //   "height" => ""
+                            //   "margin" => ""
+                            //   1 => 1
+                            // ]
+                            // $val[$id] = 1
+                            // $boosterCartId = 5566
+                            // $price = 17.711171662125
+                            // $unitPrice = 17.711171662125
+                            // $id = "1"
                                 // $this->itemSave($val, $val['brand_code'], $val['function_code'], $val['range'], $val[$id], $boosterCartId, $price, $unitPrice, $id);
                                 $this->itemSave($val['brand_code'],$val['function_code'] , $val['range'], $val[$id], $boosterCartId, $price, $unitPrice, $val, $id);
                             }
@@ -2348,7 +3045,7 @@ class BoosterSetController extends Controller {
                             }
                         }
                         break;
-                    default:
+                    default: //default
                         echo "within no code";
                         break;
                 }
@@ -2480,19 +3177,28 @@ class BoosterSetController extends Controller {
 
     public function commonAdderBasedOnAmpereNearestColumn($code, $motorPower, $voltage, $noOfPump) 
     {
-        // A Code: 26-06-2026 Start    
+        // A Code: 26-06-2026 Start
+        $getValue = function ($table, $id) {
+            return !empty($id)
+                ? DB::table($table)->where('id', $id)->value('value')
+                : null;
+        }; 
 
         DB::enableQueryLog(); // Enable query log
         $voltage_value = $voltage;
         $motor_power_value = $motorPower;
-        $noOfPump = self::getValue('number_of_pumps', $noOfPump);
-        $voltage = self::getValue('voltages', $voltage);
+
+        //$noOfPump = $this->getValueById('App\NumberOfPump', 'id', $noOfPump);
+        $noOfPump = $getValue('number_of_pumps', $noOfPump);
+        //$voltage = $this->getValueById('App\Voltage', 'id', $voltage);
+        $voltage = $getValue('voltages', $voltage);
 
         if($voltage == false)
         {
             $voltage = $voltage_value;
         }
-        $motorPower = self::getValue('powers', $motorPower);
+        //$motorPower = $this->getValueById('App\Power', 'id', $motorPower);
+        $motorPower = $getValue('powers', $motorPower);
         // A Code: 26-06-2026 End
         
         if($motorPower == false)
@@ -2523,8 +3229,535 @@ class BoosterSetController extends Controller {
         return 0;
     }
 
+    // public function boosterAddersData($booster_cart_id, $request) 
+    // {
+	// 	$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
+    //         if(auth()->user()->country_id == 6){
+	// 		$BoosterCartData = $BoosterCartData->orWhere('ksa_full_article_number','=',$request->full_article_number);
+    //         }
+    //         $BoosterCartData = $BoosterCartData->first();
+    //     if(!empty($request->full_article_number) && $request->full_article_number != null)
+    //     {
+    //         $cp_id = DB::table('control_panels')->where('id','=',$BoosterCartData->cp_id)->first();
+    //         $request->ptp_distance_id = $BoosterCartData->ptp_distance_id;
+    //         $request->no_of_pump = $cp_id->no_of_pump_id;
+    //         $request->pump_type = $BoosterCartData->pump_type;
+    //         $request->article_number = $BoosterCartData->article_number;
+    //         $request->pump_model = $BoosterCartData->model_no;
+    //         $request->power = $BoosterCartData->motor_power;
+    //         $request->voltage = $BoosterCartData->supply_voltage;
+    //         $request->manifold = $BoosterCartData->manifold;
+    //         $request->system_pressure = $BoosterCartData->system_pressure;
+    //         $request->pump_unit_price =  $BoosterCartData->pump_price;
+    //         $request->cp_id =  $BoosterCartData->cp_id;
+    //         $request->adder_ids = $BoosterCartData->adder_ids; //electrical adder ids
+    //         $request->mechanical_adder_ids = $BoosterCartData->mechanical_adder_ids;
+
+    //         $code60 = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','60')
+    //                         ->value('qty');
+
+    //         $code61 = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','61')
+    //                         ->value('qty');
+    //         $code65_desc = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','65')
+    //                         ->value('item_description');
+
+    //         $code66_desc = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','66')
+    //                         ->value('item_description');
+
+    //         $code67_desc = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','67')
+    //                         ->value('item_description');
+
+    //         $code65 = DB::table('mechanical_adder_common_pressure_vessel')
+    //                             ->select('id', 'item_description', '65')
+    //                             ->whereNotNull('65')
+    //                             ->where('65','!=','')
+    //                             ->where('65','!=','0')
+    //                             ->where('item_description','=',$code65_desc)
+    //                             ->value('id');
+
+    //         $code66 = DB::table('mechanical_adder_common_pressure_vessel')
+    //                             ->select('id', 'item_description', '66')
+    //                             ->whereNotNull('66')
+    //                             ->where('66','!=','')
+    //                             ->where('66','!=','0')
+    //                             ->where('item_description','=',$code66_desc)
+    //                             ->value('id');
+
+    //         $code67 = DB::table('mechanical_adder_common_pressure_vessel')
+    //                             ->select('id', 'item_description', '67')
+    //                             ->whereNotNull('67')
+    //                             ->where('67','!=','')
+    //                             ->where('67','!=','0')
+    //                             ->where('item_description','=',$code67_desc)
+    //                             ->value('id');
+
+    //         $request->code65 = $code65;
+    //         $request->code66 = $code66;
+    //         $request->code67 = $code67;
+            
+    //     }
+    //     $noOfPump = $request->no_of_pump;
+    //     $ptpDistanceId = $request->ptp_distance_id;
+    //     $systemPressure = $request->system_pressure;
+    //     $mainfold = $request->manifold;
+    //     $codes = '';
+    //     if(empty($request->full_article_number) && $request->full_article_number == null)
+    //     {
+    //         if ($request->mechanical_adder_ids) {
+    //             $codes = explode(",", implode(",", $request->mechanical_adder_ids));
+    //         }
+    //     }
+    //     else{
+    //         if ($request->mechanical_adder_ids) {
+    //             $codes = explode(",",$request->mechanical_adder_ids);
+    //         } 
+    //     }
+    //     $price = 0.00;
+    //     if($request->full_article_number == null){
+    //         $code60 = $request->code60;
+    //         $code61 = $request->code61;
+    //     }
+    //     if($codes){
+    //         foreach($codes as $code){
+    //             switch ($code) {
+    //                 case ($code >= 53 && $code <= 57): //electrical_common_adder code
+    //                     //id = $column
+    //                     $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                     ->whereNotNull($code)->where($code, '!=', 0)->first();
+
+    //                     $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                     $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     break;
+
+
+    //                 case (($code >= 58 && $code <= 59)) : // Range 2= standard , 3 = Premium
+    //                     $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                     ->whereNotNull($code)->where($code, '!=', 0)->first();
+
+    //                     $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                     $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     break;
+
+    //                 case ($code == 60):  //electrical_common_adder_based_on_ampere code
+    //                     if($request->full_article_number != null){
+    //                         $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                         ->whereNotNull($code)->where($code, '!=', 0)->first();
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code, $code60);
+    //                     }
+    //                     else{
+    //                         if($code60 && !empty($code60)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                         ->whereNotNull($code)->where($code, '!=', 0)->first();
+
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+                            
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code, $code60);
+    //                     }
+   
+    //                     }
+    //                     break;
+
+    //                 case ($code == 61):  //electrical_common_adder_based_on_ampere code
+    //                     if ($code61 && !empty($code61)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                         ->whereNotNull($code)->where($code, '!=', 0)->first();
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                         //date : 8-4-2022 change remove * $code61 from below price formula
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code, $code61);
+    //                     }
+    //                     break;
+
+    //                 case ($code == 62):  //electrical_common_adder_based_on_ampere code
+    //                     // $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                     //                 ->whereNotNull($code)->where($code, '!=', 0)->first();
+    //                     // $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                     $variable = $this->getCommonStainer($noOfPump, $ptpDistanceId, $systemPressure, $mainfold, $code);
+    //                     $desc = "Strainer" . " " . $variable;
+
+    //                     $get_vals = DB::table('mechanical_adder_common_strainer')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
+    //                     $price = $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+    //                     // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
+    //                     break;
+
+    //                 case ($code == 63):  //electrical_common_adder_based_on_ampere code
+
+    //                     $variable = $this->getCommonStainer($noOfPump, $ptpDistanceId, $systemPressure, $mainfold, $code);
+
+    //                     $desc = "Flexible connector" . " " . $variable;
+    //                     $get_vals = DB::table('mechanical_adder_common_flexible')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
+
+    //                     $price = $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+    //                     // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
+    //                     break;
+
+    //                 case ($code == 64):  //electrical_common_adder_based_on_ampere code
+
+    //                     $variable = $this->getCommonStainer($noOfPump, $ptpDistanceId, $systemPressure, $mainfold, $code);
+    //                     $desc = "Flexible connector" . " " . $variable;
+
+    //                     $get_vals = DB::table('mechanical_adder_common_flexible')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
+    //                     $price = $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+    //                     // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
+    //                     break;
+                    
+    //                 case ($code == 65 ):  //mechanical_adder_common_pressure_vessel code
+    //                     //if ($request->code65 && !empty($request->code65)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common_pressure_vessel')->select('brand_code', 'function_code', 'range')
+    //                                 ->whereNotNull($code)->where($code, '!=', 0)
+    //                                 ->where('id', $request->code65)
+    //                                 ->first();
+
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                         //date : 8-4-2022 change:- remove * $code61 from below price formula
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     //}
+    //                     break;
+    //                 case ($code == 66 ):  //mechanical_adder_common_pressure_vessel code
+
+    //                     if ($request->code66 && !empty($request->code66)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common_pressure_vessel')->select('brand_code', 'function_code', 'range')
+    //                                 ->whereNotNull($code)->where($code, '!=', 0)
+    //                                 ->where('id', $request->code66)
+    //                                 ->first();
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                          //date : 8-4-2022 change remove * $code61 from below price formula
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     }
+    //                     break;
+
+    //                 case ($code == 67 ):  //electrical_common_adder_based_on_ampere code
+    //                     if ($request->code67 && !empty($request->code67)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common_pressure_vessel')->select('brand_code', 'function_code', 'range')
+    //                                 ->whereNotNull($code)->where($code, '!=', 0)
+    //                                 ->where('id', $request->code67)
+    //                                 ->first();
+
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                         //date : 8-4-2022 change remove * $code61 from below price formula
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     }
+    //                     break;
+
+    //                 case ($code == 68): 
+    //                     //in admin
+    //                     $price = DB::table('setup_fields')->where('name', 'booster_adder_code_no_68')->pluck('value')[0];
+    //                     $this->insertAdderBoosterItem($booster_cart_id, 0, 0, 0, $price, $code);
+    //                     break;
+    //                 default: //default
+    //                 break;
+    //             }
+    //         }
+    //     }
+    //     return ['mechanical_adder_price' => $price];
+    // }
+
+    // public function boosterAddersData($booster_cart_id, $request) 
+    // {
+    //     // dd("boosterAddersData",$booster_cart_id, $request->all());
+
+    //     // A Code: 24-06-2026 Start       
+    //     $getIdByValue = function ($table, $value) {
+    //         return !empty($value)
+    //             ? DB::table($table)->where('value', $value)->value('id')
+    //             : null;
+    //     };
+    //     // A Code: 24-06-2026 End
+
+	// 	$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
+    //     if(auth()->user()->country_id == 6){
+	// 		$BoosterCartData = $BoosterCartData->orWhere('ksa_full_article_number','=',$request->full_article_number);
+    //     }
+    //     $BoosterCartData = $BoosterCartData->first();
+
+    //     if(!empty($request->full_article_number) && $request->full_article_number != null)
+    //     {
+    //         // A Code: 24-06-2026 Start
+    //         $boosterCartCpDetail = BoosterCartCpDetail::where('booster_cart_id', $BoosterCartData->id)->latest('id')->first();
+    //         if ($boosterCartCpDetail) { 
+    //             $request_data_no_of_pump = $getIdByValue('number_of_pumps', $boosterCartCpDetail->no_of_pump);
+    //         }else{
+    //             // Create New Request Data From Old Control Panels Table Due to Not exit
+    //             $request_data = ControlPanel::where('id','=',$BoosterCartData->cp_id)->first();
+    //             $request_data_no_of_pump = optional($request_data)->no_of_pump_id;
+    //         }
+    //         // A Code: 24-06-2026 End
+
+    //         //$cp_id = DB::table('control_panels')->where('id','=',$BoosterCartData->cp_id)->first();
+    //         $request->ptp_distance_id = $BoosterCartData->ptp_distance_id;
+    //         //$request->no_of_pump = $cp_id->no_of_pump_id;
+    //         $request->no_of_pump = $request_data_no_of_pump; // A Code: 24-06-2026
+    //         $request->pump_type = $BoosterCartData->pump_type;
+    //         $request->article_number = $BoosterCartData->article_number;
+    //         $request->pump_model = $BoosterCartData->model_no;
+    //         $request->power = $BoosterCartData->motor_power;
+    //         $request->voltage = $BoosterCartData->supply_voltage;
+    //         $request->manifold = $BoosterCartData->manifold;
+    //         $request->system_pressure = $BoosterCartData->system_pressure;
+    //         $request->pump_unit_price =  $BoosterCartData->pump_price;
+    //         $request->cp_id =  $BoosterCartData->cp_id;
+    //         $request->adder_ids = $BoosterCartData->adder_ids; //electrical adder ids
+    //         $request->mechanical_adder_ids = $BoosterCartData->mechanical_adder_ids;
+
+    //         $code60 = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','60')
+    //                         ->value('qty');
+
+    //         $code61 = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','61')
+    //                         ->value('qty');
+    //         $code65_desc = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','65')
+    //                         ->value('item_description');
+
+    //         $code66_desc = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','66')
+    //                         ->value('item_description');
+
+    //         $code67_desc = DB::table('booster_items')
+    //                         ->where('booster_cart_id',$BoosterCartData->id)
+    //                         ->where('adder_code','67')
+    //                         ->value('item_description');
+
+    //         $code65 = DB::table('mechanical_adder_common_pressure_vessel')
+    //                             ->select('id', 'item_description', '65')
+    //                             ->whereNotNull('65')
+    //                             ->where('65','!=','')
+    //                             ->where('65','!=','0')
+    //                             ->where('item_description','=',$code65_desc)
+    //                             ->value('id');
+
+    //         $code66 = DB::table('mechanical_adder_common_pressure_vessel')
+    //                             ->select('id', 'item_description', '66')
+    //                             ->whereNotNull('66')
+    //                             ->where('66','!=','')
+    //                             ->where('66','!=','0')
+    //                             ->where('item_description','=',$code66_desc)
+    //                             ->value('id');
+
+    //         $code67 = DB::table('mechanical_adder_common_pressure_vessel')
+    //                             ->select('id', 'item_description', '67')
+    //                             ->whereNotNull('67')
+    //                             ->where('67','!=','')
+    //                             ->where('67','!=','0')
+    //                             ->where('item_description','=',$code67_desc)
+    //                             ->value('id');
+
+    //         $request->code65 = $code65;
+    //         $request->code66 = $code66;
+    //         $request->code67 = $code67;
+            
+    //     }
+    //     $noOfPump = $request->no_of_pump;
+    //     $ptpDistanceId = $request->ptp_distance_id;
+    //     $systemPressure = $request->system_pressure;
+    //     $mainfold = $request->manifold;
+    //     $codes = '';
+    //     if(empty($request->full_article_number) && $request->full_article_number == null)
+    //     {
+    //         if ($request->mechanical_adder_ids) {
+    //             $codes = explode(",", implode(",", $request->mechanical_adder_ids));
+    //         }
+    //     }
+    //     else{
+    //         if ($request->mechanical_adder_ids) {
+    //             $codes = explode(",",$request->mechanical_adder_ids);
+    //         } 
+    //     }
+    //     $price = 0.00;
+    //     if($request->full_article_number == null){
+    //         $code60 = $request->code60;
+    //         $code61 = $request->code61;
+    //     }
+    //     if($codes){
+    //         foreach($codes as $code){
+    //             switch ($code) {
+    //                 case ($code >= 53 && $code <= 57): //electrical_common_adder code
+    //                     //id = $column
+    //                     $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                     ->whereNotNull($code)->where($code, '!=', 0)->first();
+
+    //                     $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                     $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     break;
+
+
+    //                 case (($code >= 58 && $code <= 59)) : // Range 2= standard , 3 = Premium
+    //                     $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                     ->whereNotNull($code)->where($code, '!=', 0)->first();
+
+    //                     $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                     $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     break;
+
+    //                 case ($code == 60):  //electrical_common_adder_based_on_ampere code
+    //                     if($request->full_article_number != null){
+    //                         $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                         ->whereNotNull($code)->where($code, '!=', 0)->first();
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code, $code60);
+    //                     }
+    //                     else{
+    //                         if($code60 && !empty($code60)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                         ->whereNotNull($code)->where($code, '!=', 0)->first();
+
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+                            
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code, $code60);
+    //                     }
+   
+    //                     }
+    //                     break;
+
+    //                 case ($code == 61):  //electrical_common_adder_based_on_ampere code
+    //                     if ($code61 && !empty($code61)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                                         ->whereNotNull($code)->where($code, '!=', 0)->first();
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                         //date : 8-4-2022 change remove * $code61 from below price formula
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code, $code61);
+    //                     }
+    //                     break;
+
+    //                 case ($code == 62):  //electrical_common_adder_based_on_ampere code
+    //                     // $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+    //                     //                 ->whereNotNull($code)->where($code, '!=', 0)->first();
+    //                     // $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                     $variable = $this->getCommonStainer($noOfPump, $ptpDistanceId, $systemPressure, $mainfold, $code);
+    //                     $desc = "Strainer" . " " . $variable;
+
+    //                     $get_vals = DB::table('mechanical_adder_common_strainer')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
+    //                     $price = $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+    //                     // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
+    //                     break;
+
+    //                 case ($code == 63):  //electrical_common_adder_based_on_ampere code
+
+    //                     $variable = $this->getCommonStainer($noOfPump, $ptpDistanceId, $systemPressure, $mainfold, $code);
+
+    //                     $desc = "Flexible connector" . " " . $variable;
+    //                     $get_vals = DB::table('mechanical_adder_common_flexible')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
+
+    //                     $price = $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+    //                     // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
+    //                     break;
+
+    //                 case ($code == 64):  //electrical_common_adder_based_on_ampere code
+
+    //                     $variable = $this->getCommonStainer($noOfPump, $ptpDistanceId, $systemPressure, $mainfold, $code);
+    //                     $desc = "Flexible connector" . " " . $variable;
+
+    //                     $get_vals = DB::table('mechanical_adder_common_flexible')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
+    //                     $price = $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
+    //                     $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+    //                     // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                     //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
+    //                     break;
+                    
+    //                 case ($code == 65 ):  //mechanical_adder_common_pressure_vessel code
+    //                     //if ($request->code65 && !empty($request->code65)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common_pressure_vessel')->select('brand_code', 'function_code', 'range')
+    //                                 ->whereNotNull($code)->where($code, '!=', 0)
+    //                                 ->where('id', $request->code65)
+    //                                 ->first();
+
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                         //date : 8-4-2022 change:- remove * $code61 from below price formula
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     //}
+    //                     break;
+    //                 case ($code == 66 ):  //mechanical_adder_common_pressure_vessel code
+
+    //                     if ($request->code66 && !empty($request->code66)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common_pressure_vessel')->select('brand_code', 'function_code', 'range')
+    //                                 ->whereNotNull($code)->where($code, '!=', 0)
+    //                                 ->where('id', $request->code66)
+    //                                 ->first();
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                          //date : 8-4-2022 change remove * $code61 from below price formula
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     }
+    //                     break;
+
+    //                 case ($code == 67 ):  //electrical_common_adder_based_on_ampere code
+    //                     if ($request->code67 && !empty($request->code67)) {
+    //                         $cpRecords = DB::table('mechanical_adder_common_pressure_vessel')->select('brand_code', 'function_code', 'range')
+    //                                 ->whereNotNull($code)->where($code, '!=', 0)
+    //                                 ->where('id', $request->code67)
+    //                                 ->first();
+
+    //                         $arrayResult = json_decode(json_encode($cpRecords), true);
+    //                         //date : 8-4-2022 change remove * $code61 from below price formula
+    //                         $price = $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+    //                         $this->insertAdderBoosterItem($booster_cart_id, $arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range'], $price, $code);
+    //                     }
+    //                     break;
+
+    //                 case ($code == 68): 
+    //                     //in admin
+    //                     $price = DB::table('setup_fields')->where('name', 'booster_adder_code_no_68')->pluck('value')[0];
+    //                     $this->insertAdderBoosterItem($booster_cart_id, 0, 0, 0, $price, $code);
+    //                     break;
+    //                 default: //default
+    //                 break;
+    //             }
+    //         }
+    //     }
+    //     return ['mechanical_adder_price' => $price];
+    // }
+
     public function boosterAddersData($booster_cart_id, $request) 
-    {      
+    {
+        // dd("boosterAddersData",$booster_cart_id, $request->all());
+
+        // A Code: 24-06-2026 Start       
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)->where('value', $value)->value('id')
+                : null;
+        };
+        // A Code: 24-06-2026 End
+
 		$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
         if(auth()->user()->country_id == 6){
 			$BoosterCartData = $BoosterCartData->orWhere('ksa_full_article_number','=',$request->full_article_number);
@@ -2536,7 +3769,7 @@ class BoosterSetController extends Controller {
             // A Code: 24-06-2026 Start
             $boosterCartCpDetail = BoosterCartCpDetail::where('booster_cart_id', $BoosterCartData->id)->latest('id')->first();
             if ($boosterCartCpDetail) { 
-                $request_data_no_of_pump = self::getIdByValue('number_of_pumps', $boosterCartCpDetail->no_of_pump);
+                $request_data_no_of_pump = $getIdByValue('number_of_pumps', $boosterCartCpDetail->no_of_pump);
             }else{
                 // Create New Request Data From Old Control Panels Table Due to Not exit
                 $request_data = ControlPanel::where('id','=',$BoosterCartData->cp_id)->first();
@@ -2544,7 +3777,9 @@ class BoosterSetController extends Controller {
             }
             // A Code: 24-06-2026 End
 
+            //$cp_id = DB::table('control_panels')->where('id','=',$BoosterCartData->cp_id)->first();
             $request->ptp_distance_id = $BoosterCartData->ptp_distance_id;
+            //$request->no_of_pump = $cp_id->no_of_pump_id;
             $request->no_of_pump = $request_data_no_of_pump; // A Code: 24-06-2026
             $request->pump_type = $BoosterCartData->pump_type;
             $request->article_number = $BoosterCartData->article_number;
@@ -2636,6 +3871,7 @@ class BoosterSetController extends Controller {
             foreach($codes as $code){
                 switch ($code) {
                     case ($code >= 53 && $code <= 57): //electrical_common_adder code
+                        //id = $column
                         $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
                                         ->whereNotNull($code)->where($code, '!=', 0)->first();
 
@@ -2697,12 +3933,17 @@ class BoosterSetController extends Controller {
                         break;
 
                     case ($code == 62):  //electrical_common_adder_based_on_ampere code
+                        // $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+                        //                 ->whereNotNull($code)->where($code, '!=', 0)->first();
+                        // $arrayResult = json_decode(json_encode($cpRecords), true);
                         $variable = $this->getCommonStainer($noOfPump, $ptpDistanceId, $systemPressure, $mainfold, $code);
                         $desc = "Strainer" . " " . $variable;
 
                         $get_vals = DB::table('mechanical_adder_common_strainer')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
                         $price = $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
                         $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+                        // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+                        //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
                         break;
 
                     case ($code == 63):  //electrical_common_adder_based_on_ampere code
@@ -2714,6 +3955,8 @@ class BoosterSetController extends Controller {
 
                         $price = $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
                         $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+                        // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+                        //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
                         break;
 
                     case ($code == 64):  //electrical_common_adder_based_on_ampere code
@@ -2724,6 +3967,8 @@ class BoosterSetController extends Controller {
                         $get_vals = DB::table('mechanical_adder_common_flexible')->where('item_description', 'LIKE', "%" . $desc . "%")->get();
                         $price = $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
                         $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+                        // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+                        //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
                         break;
                     
                     case ($code == 65 ):  //mechanical_adder_common_pressure_vessel code
@@ -2824,13 +4069,198 @@ class BoosterSetController extends Controller {
         return '';
     }
 
+    // public function ajaxDetailModalBooster(Request $request) 
+    // {
+    //     //dd($request->all());
+    //     $addersData = [];
+    //     $mechanical_addersData=[];
+    //     $cpId = $request->booster_id;
+    //     $response = array();
+
+    //     // $controlPanelData = BoosterCart::where('id', $cpId)->with(['BoosterCPdata' => function ($query) {
+    //     //                         $query->with('noofpumps')
+    //     //                         ->with('powers')
+    //     //                         ->with('voltages')
+    //     //                         ->with('applications')
+    //     //                         ->with('ambienttemps')
+    //     //                         ->with('startertypes')
+    //     //                         ->with('components')
+    //     //                         ->with('ranges')
+    //     //                         ->with('enclousres')
+    //     //                         ->with('comunicationprotocols')
+    //     //                         ->with('ipratings');
+    //     //                     }])
+    //     //                 ->get()[0];
+        
+    //     $controlPanelData = BoosterCart::where('id', $cpId)->first(); // A Code: 17-06-2026    
+                        
+    //     if(!empty($controlPanelData->adder_ids) && $controlPanelData->adder_ids != null) {
+    //         $adderIds = explode(",", $controlPanelData->adder_ids);
+            
+    //         $addersData = DB::table('main_electrical_list')->select('id','adder_list')
+    //         ->whereIn('id', $adderIds)->get();
+    //     }
+    //     if(!empty($controlPanelData->mechanical_adder_ids) && $controlPanelData->mechanical_adder_ids != null){
+    //         $adderIds = explode(",", $controlPanelData->mechanical_adder_ids);
+
+    //         $mechanical_addersData = DB::table('main_mechanical_adder_lists')
+    //                                 ->select('adder_list','code')
+    //                                 ->whereIn('code', $adderIds)->get();
+
+    //         foreach($mechanical_addersData as $val)
+    //         {
+    //             $data = array();
+    //             $data['adder_list'] = $val->adder_list;
+    //             $data['code'] = $val->code;
+
+    //             $mechanical_Data = DB::table('booster_items')
+    //             ->select('booster_cart_id','item_description','adder_code','qty')
+    //             ->where('booster_cart_id',$cpId)
+    //             ->whereIn('adder_code',  $adderIds)->get();
+
+    //                 foreach($mechanical_Data as $value)
+    //                 {   
+    //                     if($val->code == $value->adder_code)
+    //                     {
+    //                         $data['adder_code'] = $value->adder_code;
+    //                         $data['item_description'] = $value->item_description;
+    //                         $data['qty'] = $value->qty;
+    //                     }
+    //                 }
+    //             array_push($response,$data);
+    //         }
+    //     }
+
+    //     // A Code: 17-06-2026 Start Comment
+    //     //$controlPanelData->BoosterCPdata[0]->powers->value = $controlPanelData->BoosterCPdata[0]->powers->value . " Kw";
+    //     //$controlPanelData->BoosterCPdata[0]->voltages->value = $controlPanelData->BoosterCPdata[0]->voltages->value . " V";
+    //     //$controlPanelData->BoosterCPdata[0]->ambienttemps->value = $controlPanelData->BoosterCPdata[0]->ambienttemps->value . " °C";
+    //     // A Code: 17-06-2026 End Comment
+
+    //     $request_data = DB::table('control_panels')->where('id', $controlPanelData->cp_id)->first();
+
+    //     $cpNo_of_pump = DB::table('number_of_pumps')->where('id', $request_data->no_of_pump_id)->value('value');
+    //     $cpPower = DB::table('powers')->where('id', $request_data->power_id)->value('value');
+    //     $cpVoltage = DB::table('voltages')->where('id', $request_data->voltage_id)->value('value');
+    //     $cpApplication = DB::table('applications')->where('id', $request_data->application_id)->value('value');                 
+    //     $cpAmbient_temp = DB::table('ambient_temps')->where('id', $request_data->ambient_temp_id)->value('value'); 
+    //     $cpCommunication_protocol = DB::table('comunication_protocols')->where('id', $request_data->communication_protocol_id)->value('value'); 
+    //     $cpComponent = DB::table('components')->where('id', $request_data->components_id)->value('value'); 
+    //     $cpEnclosure = DB::table('enclousres')->where('id', $request_data->enclosure_id)->value('value');
+    //     $cpStarter_type = DB::table('starter_types')->where('id', $request_data->stater_type_id)->value('value');
+    //     $cpIp_rating = DB::table('ip_ratings')->where('id', $request_data->ip_rating_id)->value('value');
+
+    //     $cpDetails = optional($controlPanelData->cpDetails); // NEW booster_carts_cp_details Data (Stored New Booster CP Fields while Add TO Cart)
+    //     //$boosterData = $controlPanelData->boosterCpData[0]; // NEW control_panels_master Data
+    //     // if (!optional($cpDetails)->no_of_pump)
+    //     // {
+    //     //     $boosterData = $controlPanelData->boosterCpDataOld[0]; // Old control_panels Data                                                    
+    //     // }else{
+    //     //     $boosterData = $controlPanelData->boosterCpData[0]; // NEW control_panels_master Data                                                    
+    //     // }
+        
+    //     // Display New booster_carts_cp_details 
+    //     // But When it's Empty Then Display NEW control_panels_master Data
+    //     // if NEW control_panels_master Data with Multiple Values Then Display According to OLD control_panels Data
+
+    //     $getMatchingValue = function ($masterValue, $selectedValue) {
+    //         if (str_contains($masterValue, ',')) {
+    //             $options = array_map('trim', explode(',', $masterValue));
+    //             return in_array($selectedValue, $options) ? $selectedValue : null;
+    //         }
+    //         return $masterValue;
+    //     };        
+
+    //     // $noOfPump = $cpDetails->no_of_pump
+    //     //     ?? $getMatchingValue($boosterData->no_of_pumps, $cpNo_of_pump);
+
+    //     // $motorPower = $cpDetails->power
+    //     //     ?? $getMatchingValue($boosterData->power_rating, $cpPower);
+
+    //     // $supplyVoltage = $cpDetails->voltage
+    //     //     ?? $getMatchingValue($boosterData->power_supply, $cpVoltage);
+
+    //     // $application = $cpDetails->application
+    //     //     ?? $getMatchingValue($boosterData->applications, $cpApplication);
+
+    //     // $ambientTemp = $cpDetails->ambient_temp
+    //     //     ?? $getMatchingValue($boosterData->min_of_ambient_temp, $cpAmbient_temp);
+
+    //     // $communicationProtocol = $cpDetails->communication_protocol
+    //     //     ?? $getMatchingValue($boosterData->communication_protocol, $cpCommunication_protocol);
+
+    //     // $component = $cpDetails->component
+    //     //     ?? $getMatchingValue($boosterData->components, $cpComponent);
+
+    //     // $enclosure = $cpDetails->enclosure
+    //     //     ?? $getMatchingValue($boosterData->enclosure, $cpEnclosure);
+
+    //     // $starterType = $boosterData->starter_type; // here no chance to get multiple values
+    //     // $ipRating = $boosterData->ip_rating; // here no chance to get multiple values
+
+    //     $noOfPump = $cpDetails->no_of_pump ?? $cpNo_of_pump;
+    //     $motorPower = $cpDetails->power ?? $cpPower;
+    //     $supplyVoltage = $cpDetails->voltage ?? $cpVoltage;
+    //     $application = $cpDetails->application ?? $cpApplication;
+    //     $ambientTemp = $cpDetails->ambient_temp ?? $cpAmbient_temp;
+    //     $communicationProtocol = $cpDetails->communication_protocol ?? $cpCommunication_protocol;
+    //     $component = $cpDetails->component ?? $cpComponent;
+    //     $enclosure = $cpDetails->enclosure ?? $cpEnclosure;
+    //     $starterType = $cpDetails->stater_type ?? $cpStarter_type;
+    //     $ipRating = $cpDetails->ip_rating ?? $cpIp_rating;
+        
+    //     // $starterType = $boosterData->starter_type; // here no chance to get multiple values
+    //     // $ipRating = $boosterData->ip_rating; // here no chance to get multiple values
+
+    //     $viewData = [
+    //         'controlPanelData' => $controlPanelData,
+    //         'addersData'       => $addersData,
+    //         'response'         => $response,
+    //         'noOfPump'         => $noOfPump,
+    //         'motorPower'       => $motorPower,
+    //         'supplyVoltage'    => $supplyVoltage,
+    //         'application'      => $application,
+    //         'ambientTemp'      => $ambientTemp,
+    //         'starterType'      => $starterType,
+    //         'communicationProtocol' => $communicationProtocol,
+    //         'ipRating'         => $ipRating,
+    //         'component'        => $component,
+    //         'enclosure'        => $enclosure,
+    //     ];
+
+    //     $returnHTML = view('frontend.cart.detail_modal_booster', $viewData)->render();
+    //     // $returnHTML = view('frontend.cart.detail_modal_booster')->with('controlPanelData', $controlPanelData)
+    //     //         ->with('addersData', $addersData)
+    //     //         // ->with('mechanical_addersData', $mechanical_addersData)
+    //     //         ->with('response', $response)
+    //     //         ->render();
+    //     $data['html'] = $returnHTML;
+    //     return response()->json(array('success' => true, 'data' => $data));
+    // }
+
     // A Code: 29-06-2026 Start
     public function ajaxDetailModalBooster(Request $request) 
     {
+        //dd($request->all());
         $addersData = [];
         $mechanical_addersData=[];
         $cpId = $request->booster_id;
         $response = array();
+
+        // $controlPanelData = BoosterCart::where('id', $cpId)->with(['BoosterCPdata' => function ($query) {
+        //                         $query->with('noofpumps')
+        //                         ->with('powers')
+        //                         ->with('voltages')
+        //                         ->with('applications')
+        //                         ->with('ambienttemps')
+        //                         ->with('startertypes')
+        //                         ->with('components')
+        //                         ->with('ranges')
+        //                         ->with('enclousres')
+        //                         ->with('comunicationprotocols')
+        //                         ->with('ipratings');
+        //                     }])
+        //                 ->get()[0];
         
         $controlPanelData = BoosterCart::where('id', $cpId)->first(); // A Code: 17-06-2026    
                         
@@ -2873,7 +4303,18 @@ class BoosterSetController extends Controller {
             }
         }
 
-        // A Code: 19-06-2026 Start    
+        // A Code: 17-06-2026 Start Comment
+        //$controlPanelData->BoosterCPdata[0]->powers->value = $controlPanelData->BoosterCPdata[0]->powers->value . " Kw";
+        //$controlPanelData->BoosterCPdata[0]->voltages->value = $controlPanelData->BoosterCPdata[0]->voltages->value . " V";
+        //$controlPanelData->BoosterCPdata[0]->ambienttemps->value = $controlPanelData->BoosterCPdata[0]->ambienttemps->value . " °C";
+        // A Code: 17-06-2026 End Comment
+
+        // A Code: 19-06-2026 Start
+        $getValue = function ($table, $id) {
+            return !empty($id)
+                ? DB::table($table)->where('id', $id)->value('value')
+                : null;
+        };
         
         $cpDetails = optional($controlPanelData->cpDetails);
 
@@ -2895,17 +4336,17 @@ class BoosterSetController extends Controller {
 
             $requestData = DB::table('control_panels')->where('id', $controlPanelData->cp_id)->first();
 
-            $noOfPump = self::getValue('number_of_pumps', $requestData->no_of_pump_id);
-            $motorPower = self::getValue('powers', $requestData->power_id);
-            $supplyVoltage = self::getValue('voltages', $requestData->voltage_id);
-            $application = self::getValue('applications', $requestData->application_id);
-            $ambientTemp = self::getValue('ambient_temps', $requestData->ambient_temp_id);
-            $starterType = self::getValue('starter_types', $requestData->stater_type_id);
-            $communicationProtocol = self::getValue('comunication_protocols', $requestData->communication_protocol_id);
-            $ipRating = self::getValue('ip_ratings', $requestData->ip_rating_id);
-            $component = self::getValue('components', $requestData->components_id);
-            $enclosure = self::getValue('enclousres', $requestData->enclosure_id); 
-            $range = self::getValue('ranges', $requestData->range);            
+            $noOfPump = $getValue('number_of_pumps', $requestData->no_of_pump_id);
+            $motorPower = $getValue('powers', $requestData->power_id);
+            $supplyVoltage = $getValue('voltages', $requestData->voltage_id);
+            $application = $getValue('applications', $requestData->application_id);
+            $ambientTemp = $getValue('ambient_temps', $requestData->ambient_temp_id);
+            $starterType = $getValue('starter_types', $requestData->stater_type_id);
+            $communicationProtocol = $getValue('comunication_protocols', $requestData->communication_protocol_id);
+            $ipRating = $getValue('ip_ratings', $requestData->ip_rating_id);
+            $component = $getValue('components', $requestData->components_id);
+            $enclosure = $getValue('enclousres', $requestData->enclosure_id); 
+            $range = $getValue('ranges', $requestData->range);            
         } 
         // A Code: 19-06-2026 End
 
@@ -2926,6 +4367,11 @@ class BoosterSetController extends Controller {
         ];
 
         $returnHTML = view('frontend.cart.detail_modal_booster', $viewData)->render();
+        // $returnHTML = view('frontend.cart.detail_modal_booster')->with('controlPanelData', $controlPanelData)
+        //         ->with('addersData', $addersData)
+        //         // ->with('mechanical_addersData', $mechanical_addersData)
+        //         ->with('response', $response)
+        //         ->render();
         $data['html'] = $returnHTML;
         return response()->json(array('success' => true, 'data' => $data));
     }
@@ -2942,6 +4388,8 @@ class BoosterSetController extends Controller {
                         ->get();
 
                 $arrayResult = json_decode(json_encode($cpRecords), true);
+
+
                 if ($arrayResult) {  //  $enclousre area  drop down item check with qty
                     $i = 1;
                     foreach ($arrayResult as $key => $val) {
@@ -2992,7 +4440,15 @@ class BoosterSetController extends Controller {
     //Added for search ensloure area formula ends..!!
     //search factor
     public function searchCalculateMechanicalComponent(Request $request) 
-    {    
+    {        
+        // A Code: 29-06-2026 Start
+        $getValue = function ($table, $id) {
+            return !empty($id)
+                ? DB::table($table)->where('id', $id)->value('value')
+                : null;
+        };
+        // A Code: 29-06-2026 End
+
         $BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
         if(auth()->user()->country_id == 6){
 		    $BoosterCartData = $BoosterCartData->orWhere('ksa_full_article_number','=',$request->full_article_number);
@@ -3014,16 +4470,43 @@ class BoosterSetController extends Controller {
                                 ->where('booster_cart_id','=',$BoosterCartData->id)
                                 ->where('item_description','LIKE','%'.$search.'%')
                                 ->value('item_description');
+                                // ->first();        
+        // if($booster_cart_id)
+        // {
+        //     $item_description_height = substr($booster_cart_id, 0, strpos($booster_cart_id, 'Hx'));
+        //     $enclosure_height = explode('Enclosure ', $item_description_height);
+        //     $panel_height = $enclosure_height[1];
+        //     $item_description_width = substr($booster_cart_id, 0, strpos($booster_cart_id, 'Wx'));
+        //     $enclosure_width = explode('Hx', $item_description_width);
+        //     $panel_width = $enclosure_width[1];
+        // }
+
         if($booster_cart_id)
         {
             $item_description_height = substr($booster_cart_id, 0, strpos($booster_cart_id, 'Hx'));
             $enclosure_height = explode('Enclosure ', $item_description_height);
+            //$panel_height = $enclosure_height[1];
             $panel_height = trim($enclosure_height[1] ?? ''); // A Code: 25-06-2026
 
             $item_description_width = substr($booster_cart_id, 0, strpos($booster_cart_id, 'Wx'));
             $enclosure_width = explode('Hx', $item_description_width);
+            //$panel_width = $enclosure_width[1];
             $panel_width = trim($enclosure_width[1] ?? ''); // A Code: 25-06-2026
         }
+
+        // if($booster_cart_id == null)
+        // {
+        //     $booster_cart_id = DB::table('booster_cp_items')
+        //                 ->where('booster_cart_id','=',$BoosterCartData->id)
+        //                 ->where('item_description','LIKE','%'.'Enclosure'.'%')
+        //                 ->value('item_description');                        
+        //     $item_description_height = substr($booster_cart_id, 0, strpos($booster_cart_id, 'Hx'));
+        //     $enclosure_height = explode('Enclosure', $item_description_height);
+        //     $panel_height = $enclosure_height[1];
+        //     $item_description_width = substr($booster_cart_id, 0, strpos($booster_cart_id, 'Wx'));
+        //     $enclosure_width = explode('Hx', $item_description_width);
+        //     $panel_width = $enclosure_width[1];
+        // }
 
         // A Code: 24-06-2026 Start
         if ($booster_cart_id == null)
@@ -3053,6 +4536,8 @@ class BoosterSetController extends Controller {
         $no_of_pumps = $request->no_of_pumps;
         $system_pressure = $BoosterCartData->system_pressure;
         $cp_price = $request->cp_price;
+        // $code_price = $BoosterCartData->total_adders_price;
+        //$pump_unit_price = $BoosterCartData->pump_price;
         $starter_type = $request->starter_type;
         $range = $request->range;
         $motor_power = $request->power;
@@ -3067,10 +4552,13 @@ class BoosterSetController extends Controller {
 
         $mechanical_code_price = 0.00;        
         if($BoosterCartData->mechanical_adder_ids != null && !empty($BoosterCartData->mechanical_adder_ids)){
+            //$mechanical_code_price = $this->searchBoosterAddersData($request,$request)['mechanical_adder_price'];
             $mechanical_code_price = $this->searchBoosterAddersData($BoosterCartData->id,$request)['mechanical_adder_price'];
+            //dd($mechanical_code_price);
         }
         else{
             $mechanical_code_price = 0.00;
+            //dd($BoosterCartData->id,$request->all());             
         }
         $bill_of_material = array();
         $i = 0;
@@ -3132,6 +4620,7 @@ class BoosterSetController extends Controller {
             foreach ($ptp_data as $key => $p) {
                 $start = (int) substr(trim($p->pump_model_range1), $offset);
                 $end = (int) substr(trim($p->pump_model_range2), $offset);
+                // echo $start.' '.$end.' '.$check.'<br>';
                 if ($check >= $start && $check <= $end) {
                     $ptp = $p->ptp;
                     $ptd_distance_id = $p->id;
@@ -3208,13 +4697,14 @@ class BoosterSetController extends Controller {
                 $base_frame_length_data = BaseFrameCalculation::where('no_of_pumps', $no_of_pumps)->where('ptp', $ptp)
                 ->get();
                 $no_of_pumps = (int)\request()->get('no_of_pumps');
-                    // ->where(function($query) use ($model){
+                // ->where(function($query) use ($model){
                     //     $query->where('pump_model_range1', 'LIKE', '%' . trim(substr($model, 0, -1)) . '%');
                     //     $query->orWhere('pump_model_range2', 'LIKE', '%' . trim(substr($model, 0, -1)) . '%');
                     // })
                 foreach ($base_frame_length_data as $key => $p) {
                     $start = (int) substr(trim($p->pump_model_range1), $offset);
                     $end = (int) substr(trim($p->pump_model_range2), $offset);
+                    // echo $start.' '.$end.' '.$check.'<br>';
                     if ($check >= $start && $check <= $end) {
                         $base_frame_length = $p;
                         break;
@@ -3292,6 +4782,7 @@ class BoosterSetController extends Controller {
                 }
                 // $panel_stand_price = array_sum($master_sheet);
             } else {
+                // print_r('$panel_stand_price');
                 $data['error_html'] = 'No  Panel Height record found for panel height '.$panel_height;
                 return response()->json(array('success' => true, 'data' => $data));
             }
@@ -3467,7 +4958,7 @@ class BoosterSetController extends Controller {
             $data['pump_unit_price'] = $pump_unit_price;
             $data['panel_stand_price'] = $panel_stand_price;
             $data['no_of_pumps'] = $no_of_pumps;
-            $starter_type = self::getValue('starter_types', $starter_type); // A Code: 30-06-2026
+            $starter_type = $getValue('starter_types', $starter_type); // A Code: 29-06-2026
             $data['starter_type'] = $starter_type;            
             $data['power'] = $motor_power;
             $data['code_price'] = $code_price;
@@ -3492,11 +4983,195 @@ class BoosterSetController extends Controller {
         return response()->json(array('success' => true, 'data' => $data));
     }
 
+    // public function searchByArticleNumber(Request $request) 
+    // {
+    //     dd($request->all());
+	// 	$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
+	// 	if(auth()->user()->country_id == 6){
+    //         $BoosterCartData = $BoosterCartData->orWhere('ksa_full_article_number','=',$request->full_article_number);
+    //     }
+	// 	$BoosterCartData = $BoosterCartData->first();
+    //     if($BoosterCartData){
+    //         $controlPanelData = ControlPanel::where('id', $BoosterCartData->cp_id)
+    //                                         ->with('noofpumps')
+    //                                         ->with('powers')
+    //                                         ->with('voltages')
+    //                                         ->with('applications')
+    //                                         ->with('ambienttemps')
+    //                                         ->with('startertypes')
+    //                                         ->with('startertypes')
+    //                                         ->with('ranges')
+    //                                         ->with('enclousres')
+    //                                         ->with('comunicationprotocols')
+    //                                         ->with('ipratings')
+    //                                         ->get();
+
+    //         if($controlPanelData){
+    //             $powers = [];
+    //             $voltages = [];
+    //             $applications = [];
+    //             $ambienttemps = [];
+    //             $startertypes = [];
+    //             $components = [];
+    //             $enclousres = [];
+    //             $comunicationprotocols = [];
+    //             $ipratings = [];
+    //             $ranges = [];
+
+    //         foreach($controlPanelData as $row){
+    //             $powers[] = array('id' => $row->powers->id, 'value' => $row->powers->value);
+    //             $voltages[] = array('id' => $row->voltages->id, 'value' => $row->voltages->value);
+    //             $applications[] = array('id' => $row->applications->id, 'value' => $row->applications->value);
+    //             $ambienttemps[] = array('id' => $row->ambienttemps->id, 'value' => $row->ambienttemps->value);
+    //             $startertypes[] = array('id' => $row->startertypes->id, 'value' => $row->startertypes->value);
+    //             $components[] = array('id' => $row->components->id, 'value' => $row->components->value);
+    //             $enclousres[] = array('id' => $row->enclousres->id, 'value' => $row->enclousres->value);
+    //             $comunicationprotocols[] = array('id' => $row->comunicationprotocols->id, 'value' => $row->comunicationprotocols->value);
+    //             $ipratings[] = array('id' => $row->ipratings->id, 'value' => $row->ipratings->value);
+    //             $ranges[] = array('id' => $row->ranges->id, 'value' => $row->ranges->value);
+    //         }
+    //         $powers = array_unique($powers, SORT_REGULAR);
+    //         $voltages = array_unique($voltages, SORT_REGULAR);
+    //         $applications = array_unique($applications, SORT_REGULAR);
+    //         $ambienttemps = array_unique($ambienttemps, SORT_REGULAR);
+    //         $startertypes = array_unique($startertypes, SORT_REGULAR);
+    //         $components = array_unique($components, SORT_REGULAR);
+    //         $enclousres = array_unique($enclousres, SORT_REGULAR);
+    //         $comunicationprotocols = array_unique($comunicationprotocols, SORT_REGULAR);
+    //         $ipratings = array_unique($ipratings, SORT_REGULAR);
+    //         $ranges = array_unique($ranges, SORT_REGULAR);
+
+    //         $data = [];
+    //         $data['controlPanel'] = $controlPanelData;
+    //         $data['powers'] = array_values($powers);
+    //         $data['voltages'] = array_values($voltages);
+    //         $data['applications'] = array_values($applications);
+    //         $data['ambienttemps'] = array_values($ambienttemps);
+    //         $data['startertypes'] = array_values($startertypes);
+    //         $data['components'] = array_values($components);
+    //         $data['enclousres'] = array_values($enclousres);
+    //         $data['comunicationprotocols'] = array_values($comunicationprotocols);
+    //         $data['ipratings'] = array_values($ipratings);
+    //         $data['ranges'] = array_values($ranges);
+    //         if (isset($data['controlPanel'][0]) && !empty($data['controlPanel'][0])) {
+    //             $idberOfPump = $data['controlPanel'][0]->noofpumps['value'];
+    //             if (ControlPanelsMaster::isIntegerColumn($data['controlPanel'][0]->powers['value'])) { // A Code: 16-06-2026
+    //                 $power = $data['controlPanel'][0]->powers['value'];
+    //                 $voltage = $data['controlPanel'][0]->voltages['value'];
+    //                 $columnName = $idberOfPump . 'x' . $power . "__0kwx" . $voltage . 'v';
+    //             } else { // Float column
+    //                 $power = str_replace(".", '__', $data['controlPanel'][0]->powers['value']);
+    //                 $voltage = $data['controlPanel'][0]->voltages['value'];
+    //                 $columnName = $idberOfPump . 'x' . $power . "kwx" . $voltage . 'v';
+    //             }
+                
+    //             $startertypes = $data['controlPanel'][0]->startertypes['value'];
+    //             $starterCode = $data['controlPanel'][0]->starter_code;
+    //             $range = $data['controlPanel'][0]->ranges['value'];
+    //             $tableName = $data['controlPanel'][0]->table_name;
+    //             $component = $data['components'][0]['id'];
+    //             $cpRecordsData = [];
+    //             $price = 0.00;
+    //             $codePrice = 0.00;
+    //             $cpRecords = DB::table($tableName)->select('item_description', 'material_number', 'wilo_article_number', 'weight', 'brand_code', 'function_code', 'range', 'unit_price', 'margin', $columnName)->whereNotNull($columnName)->where($columnName, '!=', 0)->get();
+    //             $arrayResult = json_decode(json_encode($cpRecords), true);
+    //             $enclousreAdderItemData = null;
+
+    //             if ($BoosterCartData->adder_ids && $BoosterCartData->adder_ids != '') {
+    //                 $addersData = $this->calculateAddersSearchByArticle($BoosterCartData->cp_id, $BoosterCartData->adder_ids, $idberOfPump, $data['controlPanel'][0]->powers['value'], $voltage, $tableName, $columnName,$component); //Code ids
+    //                 $enclousreAdderItemData = $addersData['enclousreItem'];
+    //                 if ($addersData['code_price'] && $addersData['code_price'] != '') {
+    //                     $codePrice = $addersData['code_price'];
+    //                 }
+    //             }
+    //             foreach ($arrayResult as $key => $val) {
+    //                 $price += $this->searchByArticleCalculatePriceInItem($val, $data['controlPanel'][0]->components['id'], $data['controlPanel'][0]->enclousres['id'], $data['controlPanel'][0]->startertypes['id'], $enclousreAdderItemData, $columnName);
+    //             }
+    //             if ($codePrice > 0.00) {
+    //                 $price = $price + $codePrice;
+    //             }
+    //             $interCompanyMargin = User::ic_margin_booster();
+
+    //             $overhead  = DB::table('setup_fields')->where('name', 'booster_overhead')->pluck('value')[0];
+    //             $price = ($price * $overhead) / $interCompanyMargin;
+    //             $data['cp_price'] = number_format($price, 2);
+    //             $key = 0;
+    //             $tax = 0;
+
+    //             $cpRecordsData[$key + 1]['price'] = number_format($price, 2);
+    //             $cpRecordsData[$key + 1]['range_id'] = $range;
+    //             $cpRecordsData[$key + 1]['tax'] = $tax;
+    //             $controlPanelId = $data['controlPanel'][0]->id;
+    //             $starter = $data['controlPanel'][0]->startertypes['value'];
+    //             $application = $data['controlPanel'][0]->applications['value'];
+    //             $noOfPump = $data['controlPanel'][0]->noofpumps['value'];
+    //             $power = $data['controlPanel'][0]->powers['value'];
+    //             $returnHTML = view('frontend.controlpanel.table')->with('cpRecordsData', $controlPanelId)
+    //                     ->with('tax', $tax)
+    //                     ->with('price', $price)
+    //                     ->with('starter', $starter)
+    //                     ->with('application', $application)
+    //                     ->with('noOfPump', $noOfPump)
+    //                     ->with('power', $power)
+    //                     ->with('starterCode', $starterCode)
+    //                     ->render();
+    //             $data['cp_records_html'] = $returnHTML;
+    //             $data['cp_id'] = $data['controlPanel'][0]->id;
+    //             $data['table_name'] = $tableName;
+    //             $data['column_name'] = $columnName;
+    //             $data['total_price'] = $price;
+    //             $data['code_price'] = $codePrice;
+    //             $data['adder_ids'] = $BoosterCartData->adder_ids;
+    //             $data['no_of_pump'] = $data['controlPanel'][0]->noofpumps['id'];
+    //             $data['power_rating'] = $data['controlPanel'][0]->powers['id'];
+    //             $data['voltage'] = $data['controlPanel'][0]->voltages['id'];
+    //             if ($enclousreAdderItemData) {
+    //                 $data['enclousreItem'] = $enclousreAdderItemData;
+    //             }
+    //             return response()->json(array('success' => true, 'data' => $data));
+    //         } else {
+    //             $data['cp_records_html'] = 'No Record Found!';
+    //             $data['cp_price'] = 0.00;
+    //             return response()->json(array('success' => true, 'data' => $data));
+    //         }
+    //         } else {
+    //             $data['cp_records_html'] = 'No Record Found!';
+    //             $data['cp_price'] = 0.00;
+    //             return response()->json(array('success' => true, 'data' => $data));
+    //         }
+    //     } else {
+    //         $data['cp_records_html_error'] = 'This article number does not exits. Please select another article number or manually selects.';
+    //         return response()->json(array('success' => true, 'data' => $data));
+    //     }
+    // }
+
+    // public function serachByArticleNoGetControlPanelRangeAndCode($controlPanelId) 
+    // {
+    //     dd("serachByArticleNoGetControlPanelRangeAndCode",$controlPanelId);
+    //     $returnRangeAndCode = [];
+    //     $controlPanelData = ControlPanel::where('id', $controlPanelId)->get();
+    //     return $returnRangeAndCode = array(
+    //         'id' => $controlPanelData[0]->id,
+    //         'range' => $controlPanelData[0]->range,
+    //         'starter_code' => $controlPanelData[0]->starter_code,
+    //         'voltage_id' => $controlPanelData[0]->voltage_id,
+    //         'stater_type_id' => $controlPanelData[0]->stater_type_id
+    //     );
+    // }
+
     // A Code: 25-06-2026 Start
     public function serachByArticleNoGetControlPanelRangeAndCode($controlPanelId) 
-    {    
-        $voltageId = self::getIdByValue('voltages', $request->voltage);
-        $starterTypeId = self::getIdByValue('starter_types', $request->stater_type);       
+    {
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)
+                    ->where('value', $value)
+                    ->value('id')
+                : null;
+        };
+
+        $voltageId = $getIdByValue('voltages', $request->voltage);
+        $starterTypeId = $getIdByValue('starter_types', $request->stater_type);       
 
         $controlPanel = ControlPanelsMaster::find($controlPanelId);
 
@@ -3504,7 +5179,7 @@ class BoosterSetController extends Controller {
             return null;
         }        
 
-        $rangeId = self::getIdByValue('ranges', $controlPanel->range);
+        $rangeId = $getIdByValue('ranges', $controlPanel->range);
 
         return [
             'id'              => $controlPanel->id,
@@ -3529,6 +5204,7 @@ class BoosterSetController extends Controller {
             foreach ($ids as $id) {
                 switch ($id) {
                     case ($id >= 1 && $id <= 26): //electrical_common_adder code
+                        //id = $column
                         $electricalCommonAdders = DB::table('electrical_common_adder')->select('id', 'item_description', 'material_number', 'wilo_article_number', 'brand_code', 'function_code', 'range', $id)
                                         ->whereNotNull($id)->where($id, '!=', 0.00)->get();
                         $arrayResult = json_decode(json_encode($electricalCommonAdders), true);
@@ -3541,6 +5217,7 @@ class BoosterSetController extends Controller {
                                         $val['brand_code'] = 2;
                                     }
                                 }
+                                // echo $val['brand_code'] . "<br>";
                                 $price += $this->getMasterSheetElectricalPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$id]; // Qty = $val[$id]
                                 $encloureArea += $this->getMasterSheetHeightMultiplyByWidth($val['brand_code'], $val['function_code'], $val['range']) * $val[$id];
                             }
@@ -3585,15 +5262,17 @@ class BoosterSetController extends Controller {
                                         $val['brand_code'] = 2;
                                     }
                                 }
+                                    //echo $val[$column] * $noOfPump;
                                     $price += $this->getMasterSheetElectricalPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$column] * $noOfPump;
                                     $encloureArea += $this->getMasterSheetHeightMultiplyByWidth($val['brand_code'], $val['function_code'], $val['range']) * $val[$column];
                                 }
-                            }
-                            break;
+                                }
+                                break;
                     case ($id >= 45 && $id <= 52):  //electrical_adder_per_pump_based_on_ampere code
                         $nearestColumn = $this->searchByArticleCommonAdderBasedOnAmpereNearestColumn($id, $motorPower, $voltage, $noOfPump);
                         if ($id >= 45 && $id <= 52) {
                             $column = $id . 'x' . $nearestColumn . 'ax1';
+                        //  echo $column ."</br>";
                         } else {
                             $column = $id . 'x' . $nearestColumn . 'ax2';
                         }
@@ -3621,7 +5300,7 @@ class BoosterSetController extends Controller {
                             }
                         }
                         break;
-                    default:
+                    default: //default
                     echo "within no code";
                     break;
                 }
@@ -3656,9 +5335,11 @@ class BoosterSetController extends Controller {
     public function searchByArticleCalculatePriceInItem($component, $enclousre, $starterType, $enclousreItem, $columnName,$val = []){
         $price = 0.00;
                 if($enclousreItem && !empty($enclousreItem) && $enclousre == 2 ) {
+                //    $enclousreItem = json_decode($enclousreItem, true);
 
                     if($val['brand_code'] == $enclousreItem['brand_code'] && $val['function_code'] == $enclousreItem['function_code']) {
-                        $val['range'] = $enclousreItem['range'];
+                    $val['range'] = $enclousreItem['range'];
+                    // echo "**".$val['range']."***";
                     }
                 }
                 if($enclousreItem && !empty($enclousreItem) && $enclousre == 4)  
@@ -3667,7 +5348,7 @@ class BoosterSetController extends Controller {
                     if ($val['brand_code'] == $enclousreItem['brand_code'] && $val['function_code'] == $enclousreItem['function_code']) {
                         $val['range'] = $enclousreItem['range'];
                         $price = $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName];
-                        //Qty * price // 2 parameter is equal to brand code
+                         //Qty * price // 2 parameter is equal to brand code
                         $unitPrice = $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']);
                     }
                 }
@@ -3685,7 +5366,9 @@ class BoosterSetController extends Controller {
                 if ($component == 2 && $val['brand_code'] == 1) { // component 2 =  Economic
                     if ($this->getMasterSheetElectricalPriceData(2, $val['function_code'], $val['range'])) {
                         $price = $this->getMasterSheetElectricalPriceData(2, $val['function_code'], $val['range']) * $val[$columnName]; //Qty * price // 2 parameter is equal to brand code
+                        // echo "change" . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceData(2,  $val['function_code'], $val['range']) * $val[$columnName] . "</br>";
                     }
+                        //
                     else {
                         $price = $this->getMasterSheetElectricalPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName]; //Qty * price
                         // echo "If condition fail choose brand code 1 **" . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName] . "</br>";
@@ -3693,15 +5376,23 @@ class BoosterSetController extends Controller {
         } else if ($enclousre == 3 && $val['brand_code'] == 5 && $val['function_code'] == 1) { //3 equal GRP
             if ($this->getMasterSheetElectricalPriceData(31, 63, $val['range'])) {
                 $price = $this->getMasterSheetElectricalPriceData(31, 63, $val['range']) * $val[$columnName]; //Qty * price
-            }
+                    // echo "**".$price;
+                    // echo "Encloure  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceData(31, 63, $val['range']) * $val[$columnName] . "</br>";
+                    }
+                    //
             else {
+                //echo "Not ";
                 $price = 0.00;
             }
         } else if ($enclousre == 4 && $val['brand_code'] == 5 && $val['function_code'] == 1) { //4 equal Stainless
             if ($this->getMasterSheetElectricalPriceData(5, 64, $val['range'])) {
+                // echo $val['range'];
                 $price = $this->getMasterSheetElectricalPriceData(5, 64, $val['range']) * $val[$columnName]; //Qty * price
-            }
+                // echo "stainless  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceData(5, 64, $val['range']) * $val[$columnName] . "</br>";
+                    }
+                //
             else {
+                //echo "Not ";
                 $price = 0.00;
             }
         }
@@ -3709,13 +5400,18 @@ class BoosterSetController extends Controller {
         else if ($enclousre == 2 && $starterType == 1 && $val['brand_code'] == 8) {
             //2 equal META; 1 XTREME
             if ($this->getMasterSheetElectricalPriceData(32, $val['function_code'], $val['range'])) {
+            // echo $val['range'];
                 $price = $this->getMasterSheetElectricalPriceData(32, $val['function_code'], $val['range']) * $val[$columnName]; //Qty * price
-            }
+            //  echo "stainless  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceData(5, 64, $val['range']) * $val[$columnName] . "</br>";
+                    }
+                //
             else {
+                //echo "Not ";
                 $price = 0.00;
             }
         } else {
             $price = $this->getMasterSheetElectricalPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName]; //Qty * price
+            // echo "Normal  " . $val['brand_code'] . "  price == " . $this->getMasterSheetPriceData($val['brand_code'], $val['function_code'], $val['range']) * $val[$columnName] . "</br>";
         }
         return $price;
     }
@@ -3723,7 +5419,17 @@ class BoosterSetController extends Controller {
     //Function for search by full article number functionality of booster mechanical adder ids.
     //here by search
     public function searchBoosterAddersData($booster_cart_id, $request) 
-    {        
+    {  
+        //dd("searchBoosterAddersData",$booster_cart_id, $request->all());
+
+        // A Code: 24-06-2026 Start       
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)->where('value', $value)->value('id')
+                : null;
+        };
+        // A Code: 24-06-2026 End
+        
 		$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
 		if(auth()->user()->country_id == 6){
             $BoosterCartData = $BoosterCartData->orWhere('ksa_full_article_number','=',$request->full_article_number);
@@ -3734,7 +5440,7 @@ class BoosterSetController extends Controller {
             // A Code: 24-06-2026 Start
             $boosterCartCpDetail = BoosterCartCpDetail::where('booster_cart_id', $BoosterCartData->id)->latest('id')->first();
             if ($boosterCartCpDetail) { 
-                $request_data_no_of_pump = self::getIdByValue('number_of_pumps', $boosterCartCpDetail->no_of_pump);
+                $request_data_no_of_pump = $getIdByValue('number_of_pumps', $boosterCartCpDetail->no_of_pump);
             }else{
                 // Create New Request Data From Old Control Panels Table Due to Not exit
                 $request_data = ControlPanel::where('id','=',$BoosterCartData->cp_id)->first();
@@ -3742,7 +5448,9 @@ class BoosterSetController extends Controller {
             }
             // A Code: 24-06-2026 End
 
+            //$cp_id = DB::table('control_panels')->where('id','=',$BoosterCartData->cp_id)->first();
             $request->ptp_distance_id = $BoosterCartData->ptp_distance_id;
+            //$request->no_of_pump = $cp_id->no_of_pump_id;
             $request->no_of_pump = $request_data_no_of_pump; // A Code: 24-06-2026
             $request->pump_type = $BoosterCartData->pump_type;
             $request->article_number = $BoosterCartData->article_number;
@@ -3791,6 +5499,8 @@ class BoosterSetController extends Controller {
                             ->where('adder_code','65')
                             ->value('item_description');
 
+            //dd($code65_desc);
+
             $code66_desc = DB::table('booster_items')
                             ->where('booster_cart_id',$BoosterCartData->id)
                             ->where('adder_code','66')
@@ -3833,6 +5543,7 @@ class BoosterSetController extends Controller {
             foreach ($codes as $code) {
                 switch ($code) {
                     case ($code >= 53 && $code <= 57): //electrical_common_adder code
+                        //id = $column
                         $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
                                         ->whereNotNull($code)->where($code, '!=', 0)->first();
 
@@ -3879,6 +5590,9 @@ class BoosterSetController extends Controller {
                         break;
 
                     case ($code == 62):  //electrical_common_adder_based_on_ampere code
+                        // $cpRecords = DB::table('mechanical_adder_common')->select('brand_code', 'function_code', 'range')
+                        //                 ->whereNotNull($code)->where($code, '!=', 0)->first();
+                        // $arrayResult = json_decode(json_encode($cpRecords), true);
                         $variable = $this->getCommonStainer($noOfPump, $ptpDistanceId, $systemPressure, $mainfold, $code);
                         $desc = "Strainer" . " " . $variable;
 
@@ -3896,6 +5610,8 @@ class BoosterSetController extends Controller {
 
                         $price += $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
                         $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+                        // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+                        //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
                         break;
 
                     case ($code == 64):  //electrical_common_adder_based_on_ampere code
@@ -3907,6 +5623,8 @@ class BoosterSetController extends Controller {
                         $price += $this->getMasterSheetPriceData($get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range);
 
                         $this->insertAdderBoosterItem($booster_cart_id, $get_vals[0]->brand_code, $get_vals[0]->function_code, $get_vals[0]->range, $price, $code);
+                        // $price += $this->getMasterSheetPriceData($arrayResult['brand_code'], $arrayResult['function_code'], $arrayResult['range']);
+                        //$price += $this->getMasterSheetPriceData($arrayResult['bran  d_code'], $arrayResult['function_code'], $arrayResult['range']) * $code60;
                         break;
                     case ($code == 65 ):  //mechanical_adder_common_pressure_vessel code
                         //if ($request->code65 && !empty($request->code65)) {
@@ -3968,7 +5686,18 @@ class BoosterSetController extends Controller {
 
     //Function for search by full article number functionality of booster electrical adder ids.
     public function searchBoosterElectricalAdderData(Request $request, $boosterCartId) 
-    {       
+    {
+        //dd("searchBoosterElectricalAdderData",$request->all(), $boosterCartId);
+
+        // A Code: 24-06-2026 Start       
+        $getIdByValue = function ($table, $value) {
+            return !empty($value)
+                ? DB::table($table)->where('value', $value)->value('id')
+                : null;
+        };
+        // A Code: 24-06-2026 End
+
+        //$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number)->first();
 		$BoosterCartData = BoosterCart::where('full_article_number','=',$request->full_article_number);
 		if(auth()->user()->country_id == 6){
             $BoosterCartData = $BoosterCartData->orWhere('ksa_full_article_number','=',$request->full_article_number);
@@ -3978,13 +5707,15 @@ class BoosterSetController extends Controller {
         // A Code: 24-06-2026 Start
         $boosterCartCpDetail = BoosterCartCpDetail::where('booster_cart_id', $BoosterCartData->id)->latest('id')->first();
         if ($boosterCartCpDetail) { 
-            $request_data_components_id = self::getIdByValue('components', $boosterCartCpDetail->component);
+            $request_data_components_id = $getIdByValue('components', $boosterCartCpDetail->component);
         }else{
             // Create New Request Data From Old Control Panels Table Due to Not exit
             $request_data = ControlPanel::where('id','=',$BoosterCartData->cp_id)->first();
             $request_data_components_id = optional($request_data)->components_id;
         }           
 
+        //$cp_id = ControlPanel::where('id','=',$BoosterCartData->cp_id)->first();
+        //if($cp_id)
         if($request_data_components_id)
         {
             $component = $request_data_components_id;
@@ -4010,6 +5741,7 @@ class BoosterSetController extends Controller {
             foreach ($ids as $id) {
                 switch ($id) {
                     case ($id >= 1 && $id <= 26): //electrical_common_adder code
+                        //id = $column
                         $electricalCommonAdders = DB::table('electrical_common_adder')->select('id', 'item_description', 'material_number', 'wilo_article_number', 'brand_code', 'function_code', 'range', 'weight', 'height', 'margin', $id)
                                         ->whereNotNull($id)->where($id, '!=', 0)->get();
                         $arrayResult = json_decode(json_encode($electricalCommonAdders), true);
@@ -4131,7 +5863,7 @@ class BoosterSetController extends Controller {
                             }
                         }
                         break;
-                    default:
+                    default: //default
                         echo "within no code";
                         break;
                 }
@@ -4139,21 +5871,4 @@ class BoosterSetController extends Controller {
         }
         return ['electrical_adder_price'=>$price];
     }
-
-    // A Code: 30-06-2026 Start
-    public static function getValue($table, $id)
-    {
-        return !empty($id)
-            ? DB::table($table)->where('id', $id)->value('value')
-            : null;
-    }
-
-    public static function getIdByValue($table, $value)
-    {
-        return !empty($value)
-            ? DB::table($table)->where('value', $value)->value('id')
-            : null;
-    }
-    // A Code: 30-06-2026 End
-
 }
