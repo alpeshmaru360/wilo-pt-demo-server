@@ -162,5 +162,14 @@
     </div>
 </section>
 <!-- mid section end -->
+<style>
+/* A Code: 01-07-2026 Start */
+.formWidget .formFields .formArrowIcon {
+    position: absolute;
+    right: 1.125rem;
+    top: 0.5rem;
+}
+/* A Code: 01-07-2026 End */
+</style>
 
 @endsection

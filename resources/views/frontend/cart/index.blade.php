@@ -1,16 +1,12 @@
 @extends('frontend.layout.app')
 @section('content')
-<style>
-    /* A Code: 17-02-2026 Start */
-    .qty_input .qty .scpv-minus {
+<style>   
+    /* A Code: 01-07-2026 Start */
+    .qty_input .qty .qtyBtn{
         cursor: pointer;display: inline-block;vertical-align: top;color: #169e88;width: 30px;height: 30px;
         font: 30px / 0.9 "Noto Sans", sans-serif, sans-serif;text-align: center;background-clip: padding-box;
-    }
-    .qty_input .qty .scpv-plus {
-        cursor: pointer;display: inline-block;vertical-align: top;color: #169e88;width: 30px;height: 30px;
-        font: 30px / 0.9 "Noto Sans", sans-serif, sans-serif;text-align: center;
-    }
-    /* A Code: 17-02-2026 End */
+    }  
+    /* A Code: 01-07-2026 Start */
 </style>
 <!-- mid section start-->
 <section class="midContent" id="midContent">
@@ -44,7 +40,12 @@
                                             <td style="display: none;"><input type="checkbox" checked name="cart_id" value="{{$val['id']}}"></td>
                                             <td>
                                                 <a class="detail-modal" href="javascript:void(0)">
-                                                    Control Panel {{$val->noofpumps['value'] }} x {{ $val->powers['value'] }}KW {{$val->starter_code}}/AE
+                                                    {{-- Control Panel {{$val->noofpumps['value'] }} x {{ $val->powers['value'] }}KW {{$val->starter_code}}/AE --}}
+
+                                                    Control Panel {{ optional($val->noofpumps)->value ?? '--' }}
+                                                    x
+                                                    {{ optional($val->powers)->value ?? '--' }}KW
+                                                    {{$val->starter_code}}/AE
                                                 </a>
                                             </td>
                                             <td>

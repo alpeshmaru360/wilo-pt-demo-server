@@ -84,6 +84,11 @@
                                 @php
                                 $quotation_no = $quotation->quotation_number;
                                 $row = $quotationsData[$quotation_no] ?? null;
+                                    // A Code: 01-07-2026 Start - Skip if data not available for quotation number
+                                    //if (!isset($row['price_data']) || empty($row['price_data'])) {
+                                        //continue;
+                                    //}
+                                    // A Code: 01-07-2026 End
                                 @endphp
                                 <tr>
                                     <td>{{ $loop->iteration + $quotations->firstItem() - 1 }}</td>

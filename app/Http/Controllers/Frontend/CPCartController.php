@@ -138,10 +138,10 @@ class CPCartController extends Controller {
 
                 } elseif (!empty($request->full_article_number)) {
                     $controlPanelCartData1 = $query->where('full_article_number', $request->full_article_number)
-                                                ->first();                
+                                                ->first();
                 } elseif (!empty($request->full_article_number_for_stock)) {
                     $controlPanelCartData1 = $query->where('full_article_number', $request->full_article_number_for_stock)
-                                                ->first();                
+                                                ->first();
                 } else {
                     $controlPanelCartData1 = $query->first();
                 }
@@ -149,7 +149,20 @@ class CPCartController extends Controller {
             
                 $controlPanelCart = new ControlPanelCart;
                 if($controlPanelCartData1)
-                { 
+                {
+                    // A Code: 02-07-2026 Start
+                    $no_of_pump_id = $controlPanelCartData1->no_of_pump_id ?? 0;
+                    $power_id = $controlPanelCartData1->power_id ?? 0;
+                    $voltage_id = $controlPanelCartData1->voltage_id ?? 0;
+                    $application_id = $controlPanelCartData1->application_id ?? 0;
+                    $ambient_temp_id = $controlPanelCartData1->ambient_temp_id ?? 0;
+                    $stater_type_id = $controlPanelCartData1->stater_type_id ?? 0;
+                    $communication_protocol_id = $controlPanelCartData1->components_id ?? 0;
+                    $ip_rating_id = $controlPanelCartData1->ip_rating_id ?? 0;
+                    $components_id = $controlPanelCartData1->components_id ?? 0;
+                    $enclosure_id = $controlPanelCartData1->enclosure_id ?? 0;
+                    // A Code: 02-07-2026 End 
+
                     $controlPanelCart->article_number = $controlPanelCartData1->article_number;
                     $controlPanelCart->full_article_number = $controlPanelCartData1->full_article_number ?? 0;
                     
@@ -162,9 +175,7 @@ class CPCartController extends Controller {
                         }
                     }
                     //Booster electrical article number either manual or search code ends..!!
-                }
-                else{
-                    //$controlPanelCartData1 = BoosterCart::where('cp_id', $request->control_panel_id)
+                }else{
                     $controlPanelCartData1 = BoosterCart::where('cp_id', $request->cp_id)
                                                             ->orderBy('id', 'desc')
                                                             ->first(); 
@@ -179,18 +190,21 @@ class CPCartController extends Controller {
                     }                    
                     // A Code: 27-03-2026 End
 
-                    if($controlPanelCartData1){
-                        $request->no_of_pump = $controlPanelCartData1->no_of_pump_id;
-                        $request->power_rating = $controlPanelCartData1->power_id;
-                        $request->voltage = $controlPanelCartData1->voltage_id;
-                        $request->application = $controlPanelCartData1->application_id;
-                        $request->ambient_temp = $controlPanelCartData1->ambient_temp_id;
-                        $request->stater_type = $controlPanelCartData1->stater_type_id;
-                        $request->communication_protocol = $controlPanelCartData1->components_id;
-                        $request->ip_rating = $controlPanelCartData1->ip_rating_id;
-                        $request->component = $controlPanelCartData1->components_id;
-                        $request->enclosure = $controlPanelCartData1->enclosure_id;
-                        $request->communication_protocol = $controlPanelCartData1->components_id;
+                    if($controlPanelCartData1){                       
+
+                        // A Code: 02-07-2026 Start
+                        $no_of_pump_id = $controlPanelCartData1->no_of_pump_id ?? 0;
+                        $power_id = $controlPanelCartData1->power_id ?? 0;
+                        $voltage_id = $controlPanelCartData1->voltage_id ?? 0;
+                        $application_id = $controlPanelCartData1->application_id ?? 0;
+                        $ambient_temp_id = $controlPanelCartData1->ambient_temp_id ?? 0;
+                        $stater_type_id = $controlPanelCartData1->stater_type_id ?? 0;
+                        $communication_protocol_id = $controlPanelCartData1->components_id ?? 0;
+                        $ip_rating_id = $controlPanelCartData1->ip_rating_id ?? 0;
+                        $components_id = $controlPanelCartData1->components_id ?? 0;
+                        $enclosure_id = $controlPanelCartData1->enclosure_id ?? 0;
+                        // A Code: 02-07-2026 End 
+
                         // $controlPanelCart->article_number = $controlPanelCartData1->article_number;
 
                         // $controlPanelCart->full_article_number = $controlPanelCartData1->full_article_number;
@@ -217,19 +231,57 @@ class CPCartController extends Controller {
                 }                
 
                 $controlPanelCart->control_panel_id = $request->cp_id; // A Code: 20-06-2026
-                $controlPanelCart->no_of_pump_id = self::getIdByValue('number_of_pumps', $request['no_of_pump']) ?? 0; // A Code: 30-06-2026  
-                
-                // A Code: 27-04-2026 Start
-                $controlPanelCart->power_id = $powerID ?? 0; 
-                $controlPanelCart->voltage_id = $voltageID ?? 0;
-                $controlPanelCart->application_id = $applicationID ?? 0;
-                $controlPanelCart->ambient_temp_id = $ambientTempID ?? 0;
-                $controlPanelCart->stater_type_id = $staterTypeID ?? 0;
-                $controlPanelCart->communication_protocol_id = $communicationProtocolID ?? 0;
-                $controlPanelCart->ip_rating_id = $ipRatingID ?? 0;
-                $controlPanelCart->components_id = $componentID ?? 0;
-                $controlPanelCart->enclosure_id = $enclosureID ?? 0;                 
-                // A Code: 27-04-2026 End
+
+                // A Code: 02-07-2026 Start 
+                if($request->no_of_pump == null)
+                {
+                    // insert all fields IDs into control_panel_carts table
+                    $controlPanelCart->no_of_pump_id = $no_of_pump_id ?? 0;
+                    $controlPanelCart->power_id = $power_id ?? 0;
+                    $controlPanelCart->voltage_id = $voltage_id ?? 0;
+                    $controlPanelCart->application_id = $application_id ?? 0;
+                    $controlPanelCart->ambient_temp_id = $ambient_temp_id ?? 0;
+                    $controlPanelCart->stater_type_id = $stater_type_id ?? 0;
+                    $controlPanelCart->communication_protocol_id = $communication_protocol_id ?? 0;
+                    $controlPanelCart->ip_rating_id = $ip_rating_id ?? 0;
+                    $controlPanelCart->components_id = $components_id ?? 0;
+                    $controlPanelCart->enclosure_id = $enclosure_id ?? 0;
+
+                    // set all request field fields if not found
+                    $fieldMappings = [
+                        'no_of_pump'              => ['number_of_pumps', $no_of_pump_id],
+                        'power_rating'            => ['powers', $power_id],
+                        'voltage'                 => ['voltages', $voltage_id],
+                        'application'             => ['applications', $application_id],
+                        'ambient_temp'            => ['ambient_temps', $ambient_temp_id],
+                        'stater_type'             => ['starter_types', $stater_type_id],
+                        'communication_protocol'  => ['comunication_protocols', $communication_protocol_id],
+                        'ip_rating'               => ['ip_ratings', $ip_rating_id],
+                        'component'               => ['components', $components_id],
+                        'enclosure'               => ['enclousres', $enclosure_id],
+                    ];
+
+                    foreach ($fieldMappings as $field => [$table, $id]) {
+                        if ($request->$field === null) {
+                            $request->$field = self::getValue($table, $id);
+                        }
+                    }
+                }else{
+
+                    // insert all fields IDs into control_panel_carts table
+                    $controlPanelCart->no_of_pump_id = self::getIdByValue('number_of_pumps', $request['no_of_pump']) ?? 0;
+                    $controlPanelCart->power_id = self::getIdByValue('powers', $request['power_rating']) ?? 0;
+                    $controlPanelCart->voltage_id = self::getIdByValue('voltages', $request['voltage']) ?? 0;
+                    $controlPanelCart->application_id = self::getIdByValue('applications', $request['application']) ?? 0;
+                    $controlPanelCart->ambient_temp_id = self::getIdByValue('ambient_temps', $request['ambient_temp']) ?? 0;
+                    $controlPanelCart->stater_type_id = self::getIdByValue('starter_types', $request['stater_type']) ?? 0;
+                    $controlPanelCart->communication_protocol_id = self::getIdByValue('comunication_protocols', $request['communication_protocol']) ?? 0;
+                    $controlPanelCart->ip_rating_id = self::getIdByValue('ip_ratings', $request['ip_rating']) ?? 0;
+                    $controlPanelCart->components_id = self::getIdByValue('components', $request['component']) ?? 0;
+                    $controlPanelCart->enclosure_id = self::getIdByValue('enclousres', $request['enclosure']) ?? 0;
+                }
+                //dd($request->enclosure, $request->no_of_pump, $request->power_rating, $request->voltage, $request->application, $request->ambient_temp, $request->stater_type, $request->communication_protocol, $request->ip_rating, $request->component); 
+                // A Code: 02-07-2026 End  
                 
                 $controlPanelRange = ControlPanelsMaster::where('id', $request->cp_id)->value('range');         
                 $controlPanelCart->range = self::getIdByValue('ranges', $controlPanelRange); // A Code: 30-06-2026 
@@ -249,7 +301,8 @@ class CPCartController extends Controller {
 
                 if($request->enclosure == null)
                 {
-                    $request->enclosure = @$controlPanelCartData1->enclosure_id;
+                    //$request->enclosure = @$controlPanelCartData1->enclosure_id;
+                    $request->enclosure = self::getValue('enclousres', $controlPanelCartData1->enclosure_id);  // A Code: 02-07-2026
                 }
                 $controlPanelCart->save();
                 $cpId = $controlPanelCart->id;
@@ -366,17 +419,19 @@ class CPCartController extends Controller {
 
                 $controlPanelCart = new ControlPanelCart;
                 if($controlPanelCartData1)
-                {
-                    $request->no_of_pump = $controlPanelCartData1->no_of_pump_id;
-                    $request->power_rating = $controlPanelCartData1->power_id;
-                    $request->voltage = $controlPanelCartData1->voltage_id;
-                    $request->application = $controlPanelCartData1->application_id;
-                    $request->ambient_temp = $controlPanelCartData1->ambient_temp_id;
-                    $request->stater_type = $controlPanelCartData1->stater_type_id;
-                    $request->communication_protocol = $controlPanelCartData1->components_id;
-                    $request->ip_rating = $controlPanelCartData1->ip_rating_id;
-                    $request->component = $controlPanelCartData1->components_id;
-                    $request->enclosure = $controlPanelCartData1->enclosure_id;
+                {     
+                    // A Code: 02-07-2026 Start
+                    $no_of_pump_id = $controlPanelCartData1->no_of_pump_id ?? 0;
+                    $power_id = $controlPanelCartData1->power_id ?? 0;
+                    $voltage_id = $controlPanelCartData1->voltage_id ?? 0;
+                    $application_id = $controlPanelCartData1->application_id ?? 0;
+                    $ambient_temp_id = $controlPanelCartData1->ambient_temp_id ?? 0;
+                    $stater_type_id = $controlPanelCartData1->stater_type_id ?? 0;
+                    $communication_protocol_id = $controlPanelCartData1->components_id ?? 0;
+                    $ip_rating_id = $controlPanelCartData1->ip_rating_id ?? 0;
+                    $components_id = $controlPanelCartData1->components_id ?? 0;
+                    $enclosure_id = $controlPanelCartData1->enclosure_id ?? 0;
+                    // A Code: 02-07-2026 End 
                     
                     $controlPanelCart->article_number = $controlPanelCartData1->article_number;
                     $controlPanelCart->full_article_number = $controlPanelCartData1->full_article_number;
@@ -389,8 +444,7 @@ class CPCartController extends Controller {
                         }
                     }
                     //Booster electrical article number either manual or search code ends..!!
-                }
-                else{
+                }else{
                     
                     $controlPanelCartData1 = BoosterCart::where('cp_id', $request->cp_id) // A Code: 20-06-2026
                                                             ->whereNull('adder_ids')
@@ -407,17 +461,20 @@ class CPCartController extends Controller {
                         $controlPanelCartData1 = ControlPanelsMaster::where('id', $controlPanelCartData1->cp_id)->first(); 
                     }
                     if($controlPanelCartData1){
-                        $request->no_of_pump = $controlPanelCartData1->no_of_pump_id;
-                        $request->power_rating = $controlPanelCartData1->power_id;
-                        $request->voltage = $controlPanelCartData1->voltage_id;
-                        $request->application = $controlPanelCartData1->application_id;
-                        $request->ambient_temp = $controlPanelCartData1->ambient_temp_id;
-                        $request->stater_type = $controlPanelCartData1->stater_type_id;
-                        $request->communication_protocol = $controlPanelCartData1->components_id;
-                        $request->ip_rating = $controlPanelCartData1->ip_rating_id;
-                        $request->component = $controlPanelCartData1->components_id;
-                        $request->enclosure = $controlPanelCartData1->enclosure_id;
-                        $request->communication_protocol = $controlPanelCartData1->components_id;
+
+                        // A Code: 02-07-2026 Start
+                        $no_of_pump_id = $controlPanelCartData1->no_of_pump_id ?? 0;
+                        $power_id = $controlPanelCartData1->power_id ?? 0;
+                        $voltage_id = $controlPanelCartData1->voltage_id ?? 0;
+                        $application_id = $controlPanelCartData1->application_id ?? 0;
+                        $ambient_temp_id = $controlPanelCartData1->ambient_temp_id ?? 0;
+                        $stater_type_id = $controlPanelCartData1->stater_type_id ?? 0;
+                        $communication_protocol_id = $controlPanelCartData1->components_id ?? 0;
+                        $ip_rating_id = $controlPanelCartData1->ip_rating_id ?? 0;
+                        $components_id = $controlPanelCartData1->components_id ?? 0;
+                        $enclosure_id = $controlPanelCartData1->enclosure_id ?? 0;
+                        // A Code: 02-07-2026 End 
+
                         $controlPanelCart->article_number = $booster_data->article_number;
                         $controlPanelCart->full_article_number = $booster_data->full_article_number;                        
                         //Booster electrical article number either manual or search code starts..!!
@@ -442,20 +499,58 @@ class CPCartController extends Controller {
                     }
                 }
 
-                $controlPanelCart->control_panel_id = $request->cp_id; // A Code: 20-06-2026            
+                $controlPanelCart->control_panel_id = $request->cp_id; // A Code: 20-06-2026                 
 
-                // A Code: 30-06-2026 Start
-                $controlPanelCart->no_of_pump_id = self::getIdByValue('number_of_pumps', $request['no_of_pump']) ?? 0;
-                $controlPanelCart->power_id = self::getIdByValue('powers', $request['power_rating']) ?? 0;
-                $controlPanelCart->voltage_id = self::getIdByValue('voltages', $request['voltage']) ?? 0;
-                $controlPanelCart->application_id = self::getIdByValue('applications', $request['application']) ?? 0;
-                $controlPanelCart->ambient_temp_id = self::getIdByValue('ambient_temps', $request['ambient_temp']) ?? 0;
-                $controlPanelCart->stater_type_id = self::getIdByValue('starter_types', $request['stater_type']) ?? 0;
-                $controlPanelCart->communication_protocol_id = self::getIdByValue('comunication_protocols', $request['communication_protocol']) ?? 0;
-                $controlPanelCart->ip_rating_id = self::getIdByValue('ip_ratings', $request['ip_rating']) ?? 0;
-                $controlPanelCart->components_id = self::getIdByValue('components', $request['component']) ?? 0;
-                $controlPanelCart->enclosure_id = self::getIdByValue('enclousres', $request['enclosure']) ?? 0;
-                // A Code: 30-06-2026 Start
+                // A Code: 02-07-2026 Start 
+                if($request->no_of_pump == null)
+                {
+                    // insert all fields IDs into control_panel_carts table
+                    $controlPanelCart->no_of_pump_id = $no_of_pump_id ?? 0;
+                    $controlPanelCart->power_id = $power_id ?? 0;
+                    $controlPanelCart->voltage_id = $voltage_id ?? 0;
+                    $controlPanelCart->application_id = $application_id ?? 0;
+                    $controlPanelCart->ambient_temp_id = $ambient_temp_id ?? 0;
+                    $controlPanelCart->stater_type_id = $stater_type_id ?? 0;
+                    $controlPanelCart->communication_protocol_id = $communication_protocol_id ?? 0;
+                    $controlPanelCart->ip_rating_id = $ip_rating_id ?? 0;
+                    $controlPanelCart->components_id = $components_id ?? 0;
+                    $controlPanelCart->enclosure_id = $enclosure_id ?? 0;
+
+                    // set all request field fields if not found
+                    $fieldMappings = [
+                        'no_of_pump'              => ['number_of_pumps', $no_of_pump_id],
+                        'power_rating'            => ['powers', $power_id],
+                        'voltage'                 => ['voltages', $voltage_id],
+                        'application'             => ['applications', $application_id],
+                        'ambient_temp'            => ['ambient_temps', $ambient_temp_id],
+                        'stater_type'             => ['starter_types', $stater_type_id],
+                        'communication_protocol'  => ['comunication_protocols', $communication_protocol_id],
+                        'ip_rating'               => ['ip_ratings', $ip_rating_id],
+                        'component'               => ['components', $components_id],
+                        'enclosure'               => ['enclousres', $enclosure_id],
+                    ];
+
+                    foreach ($fieldMappings as $field => [$table, $id]) {
+                        if ($request->$field === null) {
+                            $request->$field = self::getValue($table, $id);
+                        }
+                    }
+                }else{
+
+                    // insert all fields IDs into control_panel_carts table
+                    $controlPanelCart->no_of_pump_id = self::getIdByValue('number_of_pumps', $request['no_of_pump']) ?? 0;
+                    $controlPanelCart->power_id = self::getIdByValue('powers', $request['power_rating']) ?? 0;
+                    $controlPanelCart->voltage_id = self::getIdByValue('voltages', $request['voltage']) ?? 0;
+                    $controlPanelCart->application_id = self::getIdByValue('applications', $request['application']) ?? 0;
+                    $controlPanelCart->ambient_temp_id = self::getIdByValue('ambient_temps', $request['ambient_temp']) ?? 0;
+                    $controlPanelCart->stater_type_id = self::getIdByValue('starter_types', $request['stater_type']) ?? 0;
+                    $controlPanelCart->communication_protocol_id = self::getIdByValue('comunication_protocols', $request['communication_protocol']) ?? 0;
+                    $controlPanelCart->ip_rating_id = self::getIdByValue('ip_ratings', $request['ip_rating']) ?? 0;
+                    $controlPanelCart->components_id = self::getIdByValue('components', $request['component']) ?? 0;
+                    $controlPanelCart->enclosure_id = self::getIdByValue('enclousres', $request['enclosure']) ?? 0;
+                }
+                //dd($request->enclosure, $request->no_of_pump, $request->power_rating, $request->voltage, $request->application, $request->ambient_temp, $request->stater_type, $request->communication_protocol, $request->ip_rating, $request->component); 
+                // A Code: 02-07-2026 End 
                 
                 $controlPanelRange = ControlPanelsMaster::where('id', $request->cp_id)->value('range'); 
                 $controlPanelCart->range = self::getIdByValue('ranges', $controlPanelRange); // A Code: 30-06-2026 
@@ -475,8 +570,9 @@ class CPCartController extends Controller {
                 $cpId = $controlPanelCart->id;
                 if($request->enclosure == null)
                 {
-                    $request->enclosure = $controlPanelCartData1->enclosure_id ?? null; // A Code: 19-06-2026
-                }
+                    // $request->enclosure = $controlPanelCartData1->enclosure_id ?? null; // A Code: 19-06-2026
+                    $request->enclosure = self::getValue('enclousres', $controlPanelCartData1->enclosure_id);  // A Code: 02-07-2026
+                }                
                 $data = $this->getControlPanelDataItemSave($request,$request->enclosure, $cpId, $request->cp_id); // A Code: 20-06-2026
                 //dd('case 3',$data); // without adder_ids options empty cart data condition result
                 $controlPanelUpdate = $controlPanelCart::find($cpId);

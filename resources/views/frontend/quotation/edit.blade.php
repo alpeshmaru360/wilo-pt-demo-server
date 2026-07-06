@@ -7,15 +7,13 @@
     }
 @endphp
 <style>
-    #add_quotation{background: green;padding: 5px 6px 6px 5px;border-radius: 14px;color: white;}
-    .qty_input .qty .scpv-minus {
+    #add_quotation{background: green;padding: 5px 6px 6px 5px;border-radius: 14px;color: white;}  
+    /* A Code: 01-07-2026 Start */
+    .qty_input .qty .qtyBtn{
         cursor: pointer;display: inline-block;vertical-align: top;color: #169e88;width: 30px;height: 30px;
         font: 30px / 0.9 "Noto Sans", sans-serif, sans-serif;text-align: center;background-clip: padding-box;
-    }
-    .qty_input .qty .scpv-plus {
-        cursor: pointer;display: inline-block;vertical-align: top;color: #169e88;width: 30px;height: 30px;
-        font: 30px / 0.9 "Noto Sans", sans-serif, sans-serif;text-align: center;
-    }
+    }  
+    /* A Code: 01-07-2026 Start */
 </style>
 <!-- A Code: 26-05-2026 Start -->
 <!-- <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css"> -->
@@ -481,6 +479,21 @@
                                     @endforeach
                                 @endif
                                 {{-- Fire Fighting Pump End --}}
+
+                                {{--    
+                                <!-- A Code: 01-04-2026 Start -->
+                                @if($controlPanelCartData->isEmpty() &&
+                                        $atmosCartData->isEmpty() &&
+                                        $scpCartData->isEmpty() &&
+                                        $scpvCartData->isEmpty() &&
+                                        $boosterCartData->isEmpty() &&
+                                        $firefightingCartData->isEmpty()) 
+                                    <tr>
+                                        <td colspan="7"><center>No data available in table</center></td>
+                                    </tr>                                    
+                                @endif
+                                <!-- A Code: 01-04-2026 End -->
+                                --}}
                             </tbody>
                             @endif
                         </table>

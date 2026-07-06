@@ -39,9 +39,9 @@ class ControlpanelController extends Controller{
         $numberOfPumps = NumberOfPump::select('id', 'value')->get();
         $electricalLists = DB::table('main_electrical_list')->get();
         return view('frontend.controlpanel.index', compact('numberOfPumps', 'electricalLists'));
-    }
-    
-    // A Code: 27-03-2026 Start
+    }   
+
+    // A Code: 27-03-2026 Start    
     public function ajaxFilter(Request $request)
     {
         $controlPanelData = ControlPanelsMaster::query();
@@ -101,13 +101,7 @@ class ControlpanelController extends Controller{
         }        
         // A Code: 30-06-2026 End
 
-        $controlPanelData = $controlPanelData->get();
-
-        // A Code: 27-03-2026 (Helper function for CSV)
-        $getFirstCSV = function($value){
-            return explode(',', $value)[0] ?? '';
-        };
-        // A Code: 27-03-2026 End
+        $controlPanelData = $controlPanelData->get();      
 
         // Build dropdown arrays
         $powers = [];
@@ -200,13 +194,13 @@ class ControlpanelController extends Controller{
             }
 
             // Final column name (NO spaces anywhere)
-            $columnName = $idberOfPump . 'x' . $powerFormatted . 'kwx' . $voltage . 'v';
+            $columnName = $idberOfPump . 'x' . $powerFormatted . 'kwx' . $voltage . 'v';            
 
-            // A Code: 23-05-2026 Start
-            $startertypes = $panel->startertypes['value'] ?? '';
-            $starterCode = $panel->starter_code ?? '';
-            $range = $panel->ranges['value'] ?? '';
-            // A Code: 23-05-2026 End
+            // A Code: 01-07-2026 Start
+            $starter = $panel->starter_type ?? '';
+            $starterCode = $panel->code ?? '';
+            $range = $panel->range ?? '';
+            // A Code: 01-07-2026 Start
 
             $cpRecordsData = [];
             $returnHTML = '';
@@ -218,18 +212,42 @@ class ControlpanelController extends Controller{
 
             // A Code: 27-03-2026 Start
             if(Schema::hasTable($tableName)){
-                if(Schema::hasColumn($tableName, $columnName)){
+                if(Schema::hasColumn($tableName, $columnName)){      
                     $cpRecords = DB::table($tableName)
-                                ->select('item_description', 'material_number', 'wilo_article_number', 'weight', 'brand_code', 'function_code', 'range', 'unit_price', 'margin', $columnName)
-                                ->whereNotNull($columnName)->where($columnName, '!=', 0)
-                                ->get();
+                                    ->select(
+                                        'item_description',
+                                        'material_number',
+                                        'wilo_article_number',
+                                        'weight',
+                                        'brand_code',
+                                        'function_code',
+                                        'range',
+                                        'unit_price',
+                                        'margin',
+                                        $columnName
+                                    )
+                                    ->whereNotNull($columnName)
+                                    ->where($columnName, '!=', 0)
+                                    ->get();                   
 
                     $cpRecords1 = DB::table($tableName)
-                                ->select('item_description', 'material_number', 'wilo_article_number', 'weight', 'brand_code', 'function_code', 'range', 'unit_price', 'margin', $columnName)
-                                ->whereNotNull($columnName)
-                                ->where($columnName, '!=', 0)
-                                ->where('function_code','=','1')
-                                ->count();
+                                    ->select(
+                                        'item_description',
+                                        'material_number',
+                                        'wilo_article_number',
+                                        'weight',
+                                        'brand_code',
+                                        'function_code',
+                                        'range',
+                                        'unit_price',
+                                        'margin',
+                                        $columnName
+                                    )
+                                    ->whereNotNull($columnName)
+                                    ->where($columnName, '!=', 0)
+                                    ->where('function_code', '=', '1')
+                                    ->count();
+
                     $arrayResult = json_decode(json_encode($cpRecords), true);
                     if($arrayResult){
                         $trim_height = trim($arrayResult[0]['item_description'], 'Enclosure ');
@@ -272,39 +290,32 @@ class ControlpanelController extends Controller{
                                                         
                             $data['cp_price'] = number_format($price, 2);
                             $cpRecordsData[$key + 1]['price'] = number_format($price, 2);
-                            $cpRecordsData[$key + 1]['range_id'] = $range;
+                            $rangeId = self::getIdByValue('ranges', $range) ?? 0;
+                            $cpRecordsData[$key + 1]['range_id'] = $rangeId;// A Code: 01-07-2026
                             $cpRecordsData[$key + 1]['tax'] = $tax;
-                            $controlPanelId = $data['controlPanel'][0]->id;
+                            $controlPanelId = $panel->id; // A Code: 01-07-2026                          
 
-                            // A Code: 27-03-2026 Start (CSV access fix)                        
-                            
-                            $controlPanel = $data['controlPanel'][0];
-                            $starter = $controlPanel->starter_type ?? '';
-
-                            //$application = $getFirstCSV($controlPanel->applications); // "Booster, Chiller, Circulation, Lifting"                            
-                            //$noOfPump = $getFirstCSV($controlPanel->no_of_pumps); // "2,3,4,5,6,7,8"
-                            //$power = $getFirstCSV($controlPanel->power_rating); // "0.37,0.55,0.75,1.10,1.50,2.20,3.00"  
-
-                            // A Commented Above Code due to coming Selected data in comma separated and Used $request Data instead
-
-                            $application = $getFirstCSV($request->application); // "Circulation"                          
-                            $noOfPump = $getFirstCSV($request->no_of_pump); // "3"
-                            $power = $getFirstCSV($request->power_rating); // "0.75"
-                            // A Code: 27-03-2026 End
+                            // A Code: 01-07-2026 Start
+                            $application = $request->application; // "Circulation"                          
+                            $noOfPump = $request->no_of_pump; // "3"
+                            $power = $request->power_rating; // "0.75", "4.00", "1.10"
+                            //$power = (float) $request->power_rating; // "0.75", "4", "1.1"
+                            // A Code: 01-07-2026 End
 
                             $returnHTML = view('frontend.controlpanel.table')
-                                    ->with('cpRecordsData', $controlPanelId)
-                                    ->with('tax', $tax)
-                                    ->with('price', $price)
-                                    ->with('starter', $starter)
-                                    ->with('application', $application)
-                                    ->with('noOfPump', $noOfPump)
-                                    ->with('power', $power)
-                                    ->with('starterCode', $starterCode)
-                                    ->render();
+                                            ->with('cpRecordsData', $controlPanelId)
+                                            //->with('cpRecordsData', $cpRecordsData) // A Code: 01-07-2026                                           
+                                            ->with('tax', $tax)
+                                            ->with('price', $price)
+                                            ->with('starter', $starter)
+                                            ->with('application', $application)
+                                            ->with('noOfPump', $noOfPump)
+                                            ->with('power', $power)
+                                            ->with('starterCode', $starterCode)
+                                            ->render();
 
                             $data['cp_records_html'] = $returnHTML;
-                            $data['cp_id'] = $data['controlPanel'][0]->id;
+                            $data['cp_id'] = $controlPanelId; // A Code: 01-07-2026
                             $data['table_name'] = $tableName;
                             $data['column_name'] = $columnName;
                             $data['total_price'] = $price;
@@ -312,6 +323,7 @@ class ControlpanelController extends Controller{
                             $data['cp_width'] = $cp_width;
                             $data['enclourse_exist'] = 1;
                             $data['control_panel_price_for_booster'] = $price1;
+
                         }
                     }
                 }else {
@@ -326,7 +338,7 @@ class ControlpanelController extends Controller{
         }
 
         return response()->json(['success'=>true,'data'=>$data]);
-    }
+    }    
     // A Code: 27-03-2026 End
     
     // A Code: 22-06-2026 Start
@@ -899,7 +911,8 @@ class ControlpanelController extends Controller{
         $data = view('frontend.controlpanel.modal_optional')->with('electricalListsData', $electricalListsData)->render();
         return response()->json(array('success' => true, 'data' => $data));
     }
-    
+
+    /*
     public function ajaxOptionalSelectedAdderData(Request $request)
     {        
         $noOfPump = $request->no_of_pump;
@@ -944,7 +957,7 @@ class ControlpanelController extends Controller{
                     
 
                     case($id >= 27 && $id <= 36):  //electrical_common_adder_based_on_ampere code
-                    $nearestColumn = $this->commonAdderBasedOnAmpereNearestColumn($id, $motorPower, $voltage, $noOfPump);
+                        $nearestColumn = $this->commonAdderBasedOnAmpereNearestColumn($id, $motorPower, $voltage, $noOfPump);
                         $column = $id . 'x' . $nearestColumn . 'a';
                         $electricalCommonAdderBasedOnAmpere = DB::table('electrical_common_adder_based_on_ampere')->select('item_description', 'material_number', 'wilo_article_number', 'brand_code', 'function_code', 'range', $column)
                                                             ->whereNotNull($column)
@@ -1068,6 +1081,234 @@ class ControlpanelController extends Controller{
             }
         }
     }
+    */    
+    
+    // A Code: 02-07-2026 Start    
+    public function ajaxOptionalSelectedAdderData(Request $request)
+    {       
+        $noOfPump = $request->no_of_pump;
+        $motorPower = $request->power_rating;
+        $voltage = $request->voltage;
+
+        $ids = array_filter(array_map('trim', explode(',', $request->adder_ids)));
+
+        //Code ids
+        $component = self::getIdByValue('components', $request->component) ?? 0; // A Code: 30-06-2026
+
+        $price = 0.00;
+        $encloureArea = 0.00;
+
+        if ($ids){
+            foreach($ids as $id){
+                switch(true){
+                    case($id >= 1 && $id <= 26): //electrical_common_adder code  
+                        $electricalCommonAdders = DB::table('electrical_common_adder')
+                                                        ->select(
+                                                            'id',
+                                                            'item_description',
+                                                            'material_number',
+                                                            'wilo_article_number',
+                                                            'brand_code',
+                                                            'function_code',
+                                                            'range',
+                                                            $id
+                                                        )
+                                                        ->whereNotNull($id)
+                                                        ->where($id, '!=', 0.00)
+                                                        ->get();
+                     
+                        $arrayResult = json_decode(json_encode($electricalCommonAdders), true);
+                        if($arrayResult){
+
+                            foreach ($arrayResult as $val) {
+
+                                // Component Logic (Economic / Schneider / Lovato)
+                                $val['brand_code'] = $this->getFinalBrandCode(
+                                    $val['brand_code'],
+                                    $component,
+                                    $val['function_code'],
+                                    $val['range']
+                                );                          
+                                
+                                $qty = $val[$id] ?? 0;
+                                $unitPrice = $this->getMasterSheetPriceData(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $unitArea = $this->getMasterSheetHeightMultiplyByWidth(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $price += $unitPrice * $qty;
+                                $encloureArea += $unitArea * $qty;                                
+                            }
+                        }
+                        break;                    
+
+                    case($id >= 27 && $id <= 36):  //electrical_common_adder_based_on_ampere code
+                        $nearestColumn = $this->commonAdderBasedOnAmpereNearestColumn($id, $motorPower, $voltage, $noOfPump);
+                        $column = $id . 'x' . $nearestColumn . 'a';
+                        
+                        $electricalCommonAdderBasedOnAmpere = DB::table('electrical_common_adder_based_on_ampere')
+                                                                    ->select(
+                                                                        'item_description',
+                                                                        'material_number',
+                                                                        'wilo_article_number',
+                                                                        'brand_code',
+                                                                        'function_code',
+                                                                        'range',
+                                                                        $column
+                                                                    )
+                                                                    ->whereNotNull($column)
+                                                                    ->where($column, '!=', 0.00)
+                                                                    ->get();
+
+                        $arrayResult = json_decode(json_encode($electricalCommonAdderBasedOnAmpere), true);
+                        if ($arrayResult) {
+                            foreach ($arrayResult as $val) {                                
+
+                                // Component Logic (Economic / Schneider / Lovato)
+                                $val['brand_code'] = $this->getFinalBrandCode(
+                                    $val['brand_code'],
+                                    $component,
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+
+                                $qty = $val[$column] ?? 0;
+                                $unitPrice = $this->getMasterSheetPriceData(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $area = $this->getMasterSheetHeightMultiplyByWidth(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $price += $unitPrice * $qty;
+                                $encloureArea += $area * $qty;
+                            }
+                        }
+                        break;                    
+
+                    case($id >= 37 && $id <= 44):  //electrical_adder_per_pump code
+
+                        $column = $id . 'x1';
+                        $electricalAdderPerPump = DB::table('electrical_adder_per_pump')
+                                                        ->select(
+                                                            'item_description',
+                                                            'material_number',
+                                                            'wilo_article_number',
+                                                            'brand_code',
+                                                            'function_code',
+                                                            'range',
+                                                            $column
+                                                        )
+                                                        ->whereNotNull($column)
+                                                        ->where($column, '!=', 0.00)
+                                                        ->get();
+
+                        
+                        $arrayResult = json_decode(json_encode($electricalAdderPerPump), true);
+                        if ($arrayResult) {
+
+                            foreach ($arrayResult as $val) {
+
+                                // Component Logic (Economic / Schneider / Lovato)
+                                $val['brand_code'] = $this->getFinalBrandCode(
+                                    $val['brand_code'],
+                                    $component,
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+
+                                $qty = $val[$column] ?? 0;
+                                $unitPrice = $this->getMasterSheetPriceData(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $unitArea = $this->getMasterSheetHeightMultiplyByWidth(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $price += $unitPrice * $qty * $noOfPump;
+                                $encloureArea += $unitArea * $qty;                                 
+                            }                           
+                        }
+
+                        break;
+                    case($id >= 45 && $id <= 52): 
+                        $nearestColumn = $this->commonAdderBasedOnAmpereNearestColumn($id, $motorPower, $voltage, $noOfPump);
+                        $column = $id . 'x' . $nearestColumn . 'ax1';
+
+                        $electricalAdderPerPumpBasedOnAmpere = DB::table('electrical_adder_per_pump_based_on_ampere')
+                                                                    ->select(
+                                                                        'item_description',
+                                                                        'material_number',
+                                                                        'wilo_article_number',
+                                                                        'brand_code',
+                                                                        'function_code',
+                                                                        'range',
+                                                                        $column
+                                                                    )
+                                                                    ->whereNotNull($column)
+                                                                    ->where($column, '!=', 0.00)
+                                                                    ->get();
+
+                        $arrayResult = json_decode(json_encode($electricalAdderPerPumpBasedOnAmpere), true);
+                        if ($arrayResult) {
+                            foreach ($arrayResult as $val) {
+
+                                // Component Logic (Economic / Schneider / Lovato)
+                                $val['brand_code'] = $this->getFinalBrandCode(
+                                    $val['brand_code'],
+                                    $component,
+                                    $val['function_code'],
+                                    $val['range']
+                                );         
+                                
+                                $qty = $val[$column] ?? 0;
+                                $unitPrice = $this->getMasterSheetPriceData(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $unitArea = $this->getMasterSheetHeightMultiplyByWidth(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $price += $unitPrice * $qty * $noOfPump;
+                                $encloureArea += $unitArea * $qty * $noOfPump; 
+                              
+                            }
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
+
+        $rangeAndCode = $this->getControlPanelRangeAndCode($request);
+        if($rangeAndCode['starter_code'] == 'Xtreme'){
+            return ['code_price' => $price, 'starter_code' => 'xtreme'];
+        }else{
+            $enclousreItem = $this->getControlPanelItemEnclousreAreaFormula($request->table_name, $request->column_name, $encloureArea);
+            if($enclousreItem){
+                return ['code_price' => $price, 'enclousreItem' => $enclousreItem, 'starter_code' => 'other'];
+            }else{
+                return ['enclousreItem' => $enclousreItem];
+            }
+        }
+    }        
+    // A Code: 02-07-2026 End
 
     // A Code: 10-04-2026 Start
     public function commonAdderBasedOnAmpereNearestColumn($code, $motorPower, $voltage, $noOfPump) {
@@ -1390,7 +1631,7 @@ class ControlpanelController extends Controller{
 
     // A Code: 22-04-2026 Start
     public function searchByFullArticleNumberForStock(Request $request)
-    {
+    {        
         $articleNumber = $request->full_article_number_for_stock;
 
         // =========================
@@ -1642,6 +1883,7 @@ class ControlpanelController extends Controller{
     }
     // A Code: 23-06-2026 End
 
+    /*
     public function calculateAddersSearchByArticle($control_panel_id, $ids, $noOfPump, $motorPower, $voltage, $table_name, $columnName, $component)
     {       
         $noOfPump = $noOfPump;
@@ -1784,6 +2026,247 @@ class ControlpanelController extends Controller{
         }
 
     }
+    */
+    
+    // A Code: 02-07-2026 Start
+    public function calculateAddersSearchByArticle($control_panel_id, $ids, $noOfPump, $motorPower, $voltage, $table_name, $columnName, $component)
+    {  
+        $ids = array_filter(array_map('trim', explode(',', $ids)));
+
+        $price = 0.00;        
+        $encloureArea = 0.00;
+
+        if ($ids) {
+            foreach ($ids as $id) {
+                switch (true) {
+                    case ($id >= 1 && $id <= 26): //electrical_common_adder code
+                        $electricalCommonAdders = DB::table('electrical_common_adder')
+                                                        ->select(
+                                                            'id', 
+                                                            'item_description', 
+                                                            'material_number', 
+                                                            'wilo_article_number', 
+                                                            'brand_code', 
+                                                            'function_code', 
+                                                            'range', 
+                                                            $id
+                                                        )
+                                                        ->whereNotNull($id)
+                                                        ->where($id, '!=', 0.00)
+                                                        ->get();
+                        
+                        $arrayResult = json_decode(json_encode($electricalCommonAdders), true);
+                        if ($arrayResult) {
+                            foreach ($arrayResult as $key => $val) {
+                                
+                                // Component Logic (Economic / Schneider / Lovato)
+                                $val['brand_code'] = $this->getFinalBrandCode(
+                                    $val['brand_code'],
+                                    $component,
+                                    $val['function_code'],
+                                    $val['range']
+                                );                          
+                                
+                                $qty = $val[$id] ?? 0;
+                                $unitPrice = $this->getMasterSheetPriceData(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $unitArea = $this->getMasterSheetHeightMultiplyByWidth(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $price += $unitPrice * $qty;
+                                $encloureArea += $unitArea * $qty;                               
+                               
+                            }
+                        }
+                        break;
+                    case ($id >= 27 && $id <= 36):  //electrical_common_adder_based_on_ampere code
+
+                        $nearestColumn = $this->searchByArticleCommonAdderBasedOnAmpereNearestColumn($id, $motorPower, $voltage, $noOfPump);
+                        $column = $id . 'x' . $nearestColumn . 'a';
+
+                        $electricalCommonAdderBasedOnAmpere = DB::table('electrical_common_adder_based_on_ampere')
+                                                                ->select(
+                                                                    'item_description', 
+                                                                    'material_number', 
+                                                                    'wilo_article_number', 
+                                                                    'brand_code', 
+                                                                    'function_code', 
+                                                                    'range', 
+                                                                    $column
+                                                                )
+                                                                ->whereNotNull($column)
+                                                                ->where($column, '!=', 0.00)
+                                                                ->get();
+
+                        $arrayResult = json_decode(json_encode($electricalCommonAdderBasedOnAmpere), true);
+
+                        if ($arrayResult){
+                            foreach ($arrayResult as $key => $val) {
+
+                                // Component Logic (Economic / Schneider / Lovato)
+                                $val['brand_code'] = $this->getFinalBrandCode(
+                                    $val['brand_code'],
+                                    $component,
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+
+                                $qty = $val[$column] ?? 0;
+                                $unitPrice = $this->getMasterSheetPriceData(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $area = $this->getMasterSheetHeightMultiplyByWidth(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $price += $unitPrice * $qty;
+                                $encloureArea += $area * $qty;                                
+                                
+                            }
+                        }
+                        break;
+                    case ($id >= 37 && $id <= 44):  //electrical_adder_per_pump code
+                        $column = $id . 'x1';
+                        $electricalAdderPerPump = DB::table('electrical_adder_per_pump')
+                                                    ->select(
+                                                        'item_description', 
+                                                        'material_number', 
+                                                        'wilo_article_number', 
+                                                        'brand_code', 
+                                                        'function_code', 
+                                                        'range', 
+                                                        $column
+                                                    )
+                                                    ->whereNotNull($column)
+                                                    ->where($column, '!=', 0.00)
+                                                    ->get();
+
+                        $arrayResult = json_decode(json_encode($electricalAdderPerPump), true);
+                        
+                        if ($arrayResult) {
+                            foreach ($arrayResult as $key => $val) {
+
+                                // Component Logic (Economic / Schneider / Lovato)
+                                $val['brand_code'] = $this->getFinalBrandCode(
+                                    $val['brand_code'],
+                                    $component,
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+
+                                $qty = $val[$column] ?? 0;
+                                $unitPrice = $this->getMasterSheetPriceData(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $unitArea = $this->getMasterSheetHeightMultiplyByWidth(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $price += $unitPrice * $qty * $noOfPump;
+                                $encloureArea += $unitArea * $qty;                                  
+                         
+                            }
+                        }
+                        break;
+                    case ($id >= 45 && $id <= 52):  //electrical_adder_per_pump_based_on_ampere code
+
+                        $nearestColumn = $this->searchByArticleCommonAdderBasedOnAmpereNearestColumn($id, $motorPower, $voltage, $noOfPump);
+                        $column = $id . 'x' . $nearestColumn . 'ax1';
+                        
+                        $electricalAdderPerPumpBasedOnAmpere = DB::table('electrical_adder_per_pump_based_on_ampere')
+                                                                ->select(
+                                                                    'item_description', 
+                                                                    'material_number', 
+                                                                    'wilo_article_number', 
+                                                                    'brand_code', 
+                                                                    'function_code', 
+                                                                    'range', 
+                                                                    $column
+                                                                )
+                                                                ->whereNotNull($column)
+                                                                ->where($column, '!=', 0.00)
+                                                                ->get();
+                                                                
+                        $arrayResult = json_decode(json_encode($electricalAdderPerPumpBasedOnAmpere), true);
+                        
+                        if ($arrayResult) {
+                            foreach ($arrayResult as $key => $val) {
+
+                                // Component Logic (Economic / Schneider / Lovato)
+                                $val['brand_code'] = $this->getFinalBrandCode(
+                                    $val['brand_code'],
+                                    $component,
+                                    $val['function_code'],
+                                    $val['range']
+                                );         
+                                
+                                $qty = $val[$column] ?? 0;
+                                $unitPrice = $this->getMasterSheetPriceData(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $unitArea = $this->getMasterSheetHeightMultiplyByWidth(
+                                    $val['brand_code'],
+                                    $val['function_code'],
+                                    $val['range']
+                                );
+                                $price += $unitPrice * $qty * $noOfPump; // Column qty × No. of Pumps × Pump Qty (1)
+                                $encloureArea += $unitArea * $qty * $noOfPump;                           
+                               
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }   
+        
+        $rangeAndCode = $this->serachByArticleNoGetControlPanelRangeAndCode($control_panel_id);
+        if ($rangeAndCode['starter_code'] == 'Xtreme') {
+            return ['code_price' => $price, 'starter_code' => 'xtreme'];
+        } else {
+            $enclousreItem = $this->getControlPanelItemEnclousreAreaFormula($table_name, $columnName, $encloureArea);
+            if ($enclousreItem) {
+                return ['code_price' => $price, 'enclousreItem' => $enclousreItem, 'starter_code' => 'other'];
+            } else {
+                return ['enclousreItem' => $enclousreItem];
+            }
+        }     
+
+    }    
+
+    private function getFinalBrandCode($brandCode, $component, $functionCode, $range)
+    {
+        $brandCode = $this->getEffectiveBrandAdders(
+            $brandCode,
+            $component,
+            $functionCode,
+            $range
+        );
+        if (
+            $component == 2 &&
+            $brandCode == 1 &&
+            $this->getMasterSheetPriceData(2, $functionCode, $range)
+        ) {
+            $brandCode = 2;
+        }
+
+        return $brandCode;
+    }
+    // A Code: 02-07-2026 End
 
     public function searchByArticleCommonAdderBasedOnAmpereNearestColumn($code, $motorPower, $voltage, $noOfPump)
     {

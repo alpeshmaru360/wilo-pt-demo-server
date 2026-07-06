@@ -98,9 +98,8 @@ foreach($tool_tip as $t){
                             <span class="formArrowIcon"><img src="{{asset('fassets/images/arrowDownIcon.png')}}" /></span>
                             <select name="ambient_temp" id="ambient_temp" class="formInput" disabled>
                                 <option value="">Ambient Temp*</option>
-                                <!--                                <option value="40">40</option>
-                                                                <option value="50">50</option>-->
-
+                                <!--<option value="40">40</option>
+                                <option value="50">50</option>-->
                             </select>
                         </div>
                         <div class="formFields">
@@ -111,13 +110,13 @@ foreach($tool_tip as $t){
                             <span class="formArrowIcon"><img src="{{asset('fassets/images/arrowDownIcon.png')}}" /></span>
                             <select name="stater_type" id="stater_type" class="formInput" disabled>
                                 <option value="">Stater Type*</option>
-                                <!--                                <option value="xtreme">Xtreme</option>
-                                                                <option value="constant-speed-DOL">Constant speed-DOL</option>
-                                                                <option value="constant-speed-SD">constant speed - SD</option>
-                                                                <option value="multi-VFD">Multi VFD</option>
-                                                                <option value="single-VFD">Single VFD</option>
-                                                                <option value="softstarter">softstarter</option>
-                                                                <option value="multi-VFD-Bypass">Multi VFD+ Bypass</option>-->
+                                <!--<option value="xtreme">Xtreme</option>
+                                <option value="constant-speed-DOL">Constant speed-DOL</option>
+                                <option value="constant-speed-SD">constant speed - SD</option>
+                                <option value="multi-VFD">Multi VFD</option>
+                                <option value="single-VFD">Single VFD</option>
+                                <option value="softstarter">softstarter</option>
+                                <option value="multi-VFD-Bypass">Multi VFD+ Bypass</option>-->
                             </select>
                         </div>
                         <div class="formFields">
@@ -128,11 +127,10 @@ foreach($tool_tip as $t){
                             <span class="formArrowIcon"><img src="{{asset('fassets/images/arrowDownIcon.png')}}" /></span>
                             <select name="communication_protocol" id="communication_protocol" class="formInput" disabled>
                                 <option value="">Communication Protocol*</option>
-                                <!--                                <option value="vFC">VFC</option>
-                                                                <option value="modbus-RTU">Modbus RTU</option>
-                                                                <option value="modbus-TCP">Modbus TCP/IP</option>
-                                                                <option value="bacnet">Bacnet</option>-->
-
+                                <!--<option value="vFC">VFC</option>
+                                <option value="modbus-RTU">Modbus RTU</option>
+                                <option value="modbus-TCP">Modbus TCP/IP</option>
+                                <option value="bacnet">Bacnet</option>-->
                             </select>
                         </div>
                         <div class="formFields">
@@ -143,9 +141,9 @@ foreach($tool_tip as $t){
                             <span class="formArrowIcon"><img src="{{asset('fassets/images/arrowDownIcon.png')}}" /></span>
                             <select name="ip_rating" id="ip_rating" class="formInput" disabled>
                                 <option value="">IP Rating*</option>
-                                <!--                                <option value="IP54">IP54</option>
-                                                                <option value="IP65">IP65</option>
-                                                                <option value="IP66">IP66</option>-->
+                                <!--<option value="IP54">IP54</option>
+                                <option value="IP65">IP65</option>
+                                <option value="IP66">IP66</option>-->
                             </select>
                         </div>
                         <div class="formFields">
@@ -156,8 +154,8 @@ foreach($tool_tip as $t){
                             <span class="formArrowIcon"><img src="{{asset('fassets/images/arrowDownIcon.png')}}" /></span>
                             <select name="component" id="component" class="formInput" disabled>
                                 <option value="">Components*</option>
-                                <!--                                <option value="standard">standard</option>
-                                                                <option value="Economic">Economic</option>-->
+                                <!--<option value="standard">standard</option>
+                                <option value="Economic">Economic</option>-->
                             </select>
                         </div>
                         <div class="formFields">
@@ -168,9 +166,9 @@ foreach($tool_tip as $t){
                             <span class="formArrowIcon"><img src="{{asset('fassets/images/arrowDownIcon.png')}}" /></span>
                             <select name="enclosure" id="enclosure" class="formInput" disabled>
                                 <option value="">Enclosure*</option>
-                                <!--                                <option value="metal">metal</option>
-                                                                <option value="GRP">GRP</option>
-                                                                <option value="Stainless-steel">Stainless steel</option>-->
+                                <!--<option value="metal">metal</option>
+                                <option value="GRP">GRP</option>
+                                <option value="Stainless-steel">Stainless steel</option>-->
                             </select>
                         </div>
                     </form>
